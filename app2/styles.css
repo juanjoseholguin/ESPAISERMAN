@@ -1,0 +1,111 @@
+/* screen1.css */
+
+#screen1 {
+  animation: slideInFromLeft 0.6s ease-out;
+  background: linear-gradient(to right, #c6ffdd, #fbd786, #f7797d);
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  color: #333;
+  text-align: center;
+}
+
+#screen1 h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  animation: fadeIn 1s ease-out 0.3s;
+  animation-fill-mode: both;
+}
+
+#screen1 p {
+  font-size: 1.2rem;
+  animation: fadeIn 1s ease-out 0.6s;
+  animation-fill-mode: both;
+}
+
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-100vw);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* screen2.css */
+
+#screen2 {
+  animation: slideInFromRight 0.6s ease-out;
+  background: linear-gradient(to right, #89f7fe, #66a6ff);
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  color: #fff;
+  text-align: center;
+}
+
+#screen2 h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  animation: fadeIn 1s ease-out 0.3s;
+  animation-fill-mode: both;
+}
+
+#screen2 p {
+  font-size: 1.2rem;
+  animation: fadeIn 1s ease-out 0.6s;
+  animation-fill-mode: both;
+}
+
+#go-screen-back {
+  margin-top: 2rem;
+  padding: 0.8rem 1.6rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 12px;
+  background-color: #ffffffcc;
+  color: #333;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  animation: fadeIn 1s ease-out 0.9s;
+  animation-fill-mode: both;
+}
+
+#go-screen-back:hover {
+  background-color: #fff;
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100vw);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

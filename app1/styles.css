@@ -1,0 +1,713 @@
+/* ESPAISERMAN mobile styles */
+/* ========================================
+   ESPAISERMAN TRIVIA - DISEÑO MÓVIL OPTIMIZADO
+   ======================================== */
+
+/* Reset y configuración base para móvil */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #FFD700; /* Fondo amarillo base */
+    /* Removido SVG inexistente para evitar 404; se mantiene color sólido */
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    position: relative;
+}
+
+/* ========================================
+   SISTEMA DE PANTALLAS MÓVIL
+   ======================================== */
+.screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: none;
+    flex-direction: column;
+    z-index: 1;
+}
+
+.screen.active {
+    display: flex;
+}
+
+/* ========================================
+   BARRA DE ESTADO DEL MÓVIL
+   ======================================== */
+.status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 20px;
+    background: rgba(0, 0, 0, 0.1);
+    height: 44px;
+    z-index: 10;
+}
+
+.time {
+    font-size: 17px;
+    font-weight: 600;
+    color: #000;
+}
+
+.status-icons {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.signal, .wifi, .battery {
+    width: 18px;
+    height: 12px;
+    background: #000;
+    border-radius: 2px;
+}
+
+.signal {
+    background: linear-gradient(90deg, #000 0%, #000 60%, transparent 60%);
+}
+
+.wifi {
+    background: radial-gradient(circle at bottom, #000 0%, #000 40%, transparent 40%);
+}
+
+.battery {
+    background: linear-gradient(90deg, #000 0%, #000 80%, #4CAF50 80%);
+}
+
+/* ========================================
+   BOTÓN DE RETROCESO
+   ======================================== */
+.back-button {
+    position: absolute;
+    top: 60px;
+    left: 20px;
+    width: 40px;
+    height: 40px;
+    background: #1E3A8A;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.back-arrow {
+    width: 0;
+    height: 0;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-right: 12px solid #fff;
+    margin-left: 2px;
+}
+
+/* ========================================
+   CONTENIDO PRINCIPAL
+   ======================================== */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    padding-top: 100px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ========================================
+   TÍTULOS DE LA APLICACIÓN
+   ======================================== */
+.app-title {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.main-title {
+    font-size: 48px;
+    font-weight: bold;
+    color: #FF8C00;
+    text-shadow: 3px 3px 0px #FF4444, 6px 6px 0px #1E3A8A;
+    margin: 0;
+    letter-spacing: 2px;
+    font-family: 'Arial Black', Arial, sans-serif;
+}
+
+.subtitle {
+    font-size: 24px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 2px 2px 0px #8B5CF6, 4px 4px 0px #4C1D95;
+    margin: 10px 0 0 0;
+    letter-spacing: 1px;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+}
+
+/* ========================================
+   SECCIÓN DEL LOGO Y PERSONAJE
+   ======================================== */
+.logo-section {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+/* Contenedor para imagen Group 4 */
+.group4-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 20px;
+}
+
+/* Imagen Group 4 PNG */
+.group4-image {
+    width: 260px;
+    height: auto;
+    max-width: 260px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+/* ========================================
+   SECCIÓN DEL FORMULARIO
+   ======================================== */
+.form-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.form-title {
+    font-size: 28px;
+    font-weight: bold;
+    color: #000;
+    text-align: center;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.form-container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    margin-bottom: 20px;
+}
+
+/* ========================================
+   CAMPOS DE ENTRADA
+   ======================================== */
+.input-group {
+    margin-bottom: 20px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 16px;
+    border: 2px solid #E5E7EB;
+    border-radius: 12px;
+    font-size: 16px;
+    background: #fff;
+    transition: all 0.3s ease;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #FF4444;
+    box-shadow: 0 0 0 3px rgba(255, 68, 68, 0.1);
+}
+
+.form-input::placeholder {
+    color: #9CA3AF;
+}
+
+/* ========================================
+   ENLACE DE CONTRASEÑA OLVIDADA
+   ======================================== */
+.forgot-password {
+    text-align: right;
+    margin-bottom: 25px;
+}
+
+.forgot-link {
+    font-size: 14px;
+    color: #1E3A8A; /* azul para indicar enlace */
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.forgot-link:hover {
+    color: #1E3A8A;
+    text-decoration: underline;
+}
+
+/* ========================================
+   BOTÓN PRINCIPAL
+   ======================================== */
+.btn-primary {
+    width: 100%;
+    padding: 16px;
+    background: #8FA6E0; /* azul botón */
+    color: #fff;
+    border: 3px solid #1E2A44; /* borde oscuro como referencia */
+    border-radius: 16px;
+    font-size: 18px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+    box-shadow: 0 8px 0 #0E1A34, 0 6px 18px rgba(0,0,0,.25);
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    background: #9CB2E6;
+}
+
+.btn-primary:active {
+    transform: translateY(2px) scale(0.98);
+    box-shadow: 0 4px 0 #0E1A34, 0 3px 10px rgba(0,0,0,.25);
+}
+
+/* efecto press via clase */
+.btn-pressed {
+    transform: translateY(2px) scale(0.98) !important;
+    box-shadow: 0 4px 0 #0E1A34, 0 3px 10px rgba(0,0,0,.25) !important;
+}
+
+/* ========================================
+   ESTILOS PARA AVATARES DE JUGADORES
+   ======================================== */
+.player-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.player-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.player-name {
+    color: white;
+    font-weight: 500;
+    font-size: 16px;
+}
+
+/* ========================================
+   ESTILOS PARA PERFIL
+   ======================================== */
+.profile-container {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 100px);
+}
+
+.profile-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 30px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.profile-picture-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.profile-picture {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 4px solid white;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.profile-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.edit-photo-btn {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 32px;
+    height: 32px;
+    background: #4A90E2;
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.profile-name {
+    text-align: center;
+    color: #2C3E50;
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    color: #2C3E50;
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.password-input-container {
+    position: relative;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #7F8C8D;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.color-picker {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.color-option {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+}
+
+.color-option.selected {
+    border-color: #2C3E50;
+    transform: scale(1.1);
+}
+
+.button-group {
+    display: flex;
+    gap: 12px;
+    margin-top: 30px;
+}
+
+.btn-secondary {
+    flex: 1;
+    padding: 12px 20px;
+    background: #95A5A6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background: #7F8C8D;
+}
+
+/* ========================================
+   ESTILOS PARA SELECCIÓN DE CATEGORÍA
+   ======================================== */
+.category-selection-screen {
+    background: linear-gradient(135deg, #F9D648 0%, #FFE066 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.change-password-screen {
+    background: linear-gradient(135deg, #F9D648 0%, #FFE066 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* ========================================
+   SECCIÓN DE ENLACE DE REGISTRO
+   ======================================== */
+.register-link-section {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.register-text {
+    font-size: 16px;
+    color: #000;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.register-link {
+    background: none;
+    border: none;
+    color: #FF6B35;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: underline;
+    transition: color 0.3s ease;
+}
+
+.register-link:hover {
+    color: #FF4444;
+}
+
+/* ========================================
+   ANIMACIONES
+   ======================================== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+.screen.active {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+/* ========================================
+   RESPONSIVE PARA DIFERENTES TAMAÑOS DE MÓVIL
+   ======================================== */
+@media (max-width: 375px) {
+    .main-content {
+        padding: 15px;
+        padding-top: 80px;
+    }
+    
+    .logo {
+        max-width: 240px;
+    }
+    
+    .character {
+        width: 100px;
+    }
+    
+    .form-container {
+        padding: 20px;
+    }
+    
+    .form-title {
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 320px) {
+    .main-content {
+        padding: 10px;
+        padding-top: 70px;
+    }
+    
+    .logo {
+        max-width: 200px;
+    }
+    
+    .character {
+        width: 80px;
+    }
+    
+    .form-container {
+        padding: 15px;
+    }
+    
+    .form-title {
+        font-size: 20px;
+    }
+    
+    .btn-primary {
+        padding: 14px;
+        font-size: 16px;
+    }
+}
+
+/* ========================================
+   ORIENTACIÓN LANDSCAPE
+   ======================================== */
+@media (orientation: landscape) and (max-height: 500px) {
+    .main-content {
+        padding-top: 60px;
+    }
+    
+    .logo-section {
+        margin-bottom: 20px;
+    }
+    
+    .character {
+        width: 80px;
+    }
+    
+    .logo {
+        max-width: 200px;
+    }
+    
+    .form-container {
+        padding: 20px;
+    }
+}
+
+/* ========================================
+   UTILIDADES
+   ======================================== */
+.hidden {
+    display: none !important;
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.no-scroll {
+    overflow: hidden;
+}
+
+/* ========================================
+   ESTADOS DE CARGA
+   ======================================== */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading .btn-primary {
+    background: #9CA3AF;
+    cursor: not-allowed;
+}
+
+/* ========================================
+   ESTILOS PARA MAPA
+   ======================================== */
+.map-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    padding-top: 100px;
+}
+
+.map-header {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.map-header h2 {
+    color: #1e3a8a;
+    font-size: 18px;
+    margin-bottom: 8px;
+}
+
+.map-header p {
+    color: #666;
+    font-size: 14px;
+    margin: 0;
+}
+
+.map {
+    flex: 1;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    min-height: 400px;
+}
+
+.map-controls {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.map-controls .btn-primary {
+    flex: 1;
+    background: #11A36B;
+    border-color: #0C6E4A;
+}
+
+.map-controls .btn-secondary {
+    flex: 1;
+    background: #6B7280;
+    border-color: #4B5563;
+}
