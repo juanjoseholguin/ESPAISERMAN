@@ -1,11 +1,12 @@
 {
   "name": "espaiserman-trivia-app",
   "version": "1.0.0",
-  "description": "Aplicación móvil de trivia con temática Spider-Man desarrollada en JavaScript vanilla",
+  "description": "Aplicación móvil de trivia con temática Spider-Man Colombiano desarrollada en JavaScript vanilla",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon --env-file=.env index.js",
+    "dev": "nodemon --watch index.js",
     "start-simple": "nodemon --env-file=.env index-simple.js"
   },
   "keywords": [
