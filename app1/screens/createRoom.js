@@ -38,11 +38,7 @@ export default function renderCreateRoom() {
     const participants = parseInt(document.getElementById("participants").value || 0, 10);
     const timePerQuestion = parseInt(document.getElementById("timePerQuestion").value || 0, 10);
     if (!category || !participants || !timePerQuestion) { alert("Completa todos los campos"); return; }
-    const socket = window.io("/", { path: "/real-time" });
-    const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-    let code = ""; for (let i = 0; i < 6; i++) code += alphabet[Math.floor(Math.random()*alphabet.length)];
-    socket.emit("room:create", { code, category, maxParticipants: participants, timePerQuestion, host: window.memoryState?.currentUser });
-    socket.on("room:created", () => navigateTo("/lobby", { code }));
+    navigateTo("/map", { category, participants, timePerQuestion });
   });
 }
 

@@ -174,21 +174,11 @@ export default function renderScreen1() {
   document.getElementById("login-btn").addEventListener("click", async () => {
     const username = document.getElementById("login-username").value;
     const password = document.getElementById("login-password").value;
-    
-    if (!username || !password) {
-      alert("Por favor completa todos los campos");
-      return;
-    }
-    
+    if (!username || !password) { alert("Por favor completa todos los campos"); return; }
+    const email = username.includes("@") ? username : `${username}@example.com`;
     try {
-      console.log("login", { username, password });
-      const response = await makeRequest("/users", "POST", { 
-        name: username, 
-        email: `${username}@example.com` 
-      });
-      
-      if (response.success) {
-        alert("¡Inicio de sesión exitoso!");
+      const response = await makeRequest("/users", "POST", { username, email });
+      if (response?.success) {
         memoryState.currentUser = username;
         navigateTo("/main");
         const lu = document.getElementById("login-username");
@@ -196,10 +186,9 @@ export default function renderScreen1() {
         if (lu) lu.value = "";
         if (lp) lp.value = "";
       } else {
-        alert("Error al iniciar sesión: " + (response.error || "Error desconocido"));
+        alert("Credenciales inválidas: " + (response?.error || ""));
       }
     } catch (error) {
-      console.error("Login error:", error);
       alert("Error al conectar con el servidor");
     }
   });
@@ -221,15 +210,9 @@ export default function renderScreen1() {
     }
     
     try {
-      console.log("register", { name, email });
-      const response = await makeRequest("/users", "POST", { 
-        name: name, 
-        email: email 
-      });
-      
-      if (response.success) {
-        alert("¡Registro exitoso! Bienvenido a Espaiserman Trivia");
-        memoryState.currentUser = name;
+      const response = await makeRequest("/users", "POST", { name, email });
+      if (response?.success) {
+        memoryState.currentUser = name || email;
         navigateTo("/main");
         const rn = document.getElementById("register-name");
         const re = document.getElementById("register-email");
@@ -240,10 +223,9 @@ export default function renderScreen1() {
         if (rp) rp.value = "";
         if (rcp) rcp.value = "";
       } else {
-        alert("Error al registrarse: " + (response.error || "Error desconocido"));
+        alert("No se pudo registrar: " + (response?.error || ""));
       }
     } catch (error) {
-      console.error("Register error:", error);
       alert("Error al conectar con el servidor");
     }
   });

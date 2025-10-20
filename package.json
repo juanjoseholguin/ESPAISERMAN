@@ -1,11 +1,12 @@
 {
   "name": "espaiserman-trivia-app",
   "version": "1.0.0",
-  "description": "Aplicación móvil de trivia con temática Spider-Man desarrollada en JavaScript vanilla",
+  "description": "Aplicación móvil de trivia con temática Spider-Man Colombiano desarrollada en JavaScript vanilla",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon --env-file=.env index.js",
+    "dev": "nodemon --watch index.js",
     "start-simple": "nodemon --env-file=.env index-simple.js"
   },
   "keywords": [
@@ -19,14 +20,6 @@
   ],
   "author": "Espaiserman Team",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/espaiserman/trivia-app"
-  },
-  "bugs": {
-    "url": "https://github.com/espaiserman/trivia-app/issues"
-  },
-  "homepage": "https://github.com/espaiserman/trivia-app#readme",
   "dependencies": {
     "@getbrevo/brevo": "^3.0.1",
     "@supabase/supabase-js": "^2.49.4",
@@ -37,10 +30,5 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
-  },
-  "browserslist": [
-    "> 1%",
-    "last 2 versions",
-    "not dead"
-  ]
+  }
 }

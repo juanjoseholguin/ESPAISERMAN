@@ -113,32 +113,36 @@ class EspaisermanMobileApp {
         }, 500);
     }
 
-    // ========================================
-    // FUNCIONES DE AUTENTICACIÓN
-    // ========================================
     handleLogin() {
         const username = document.getElementById('login-username').value;
         const password = document.getElementById('login-password').value;
-
         if (!username || !password) {
             this.showAlert('Error', 'Por favor completa todos los campos');
             return;
         }
-
-        // Simular validación
         this.showLoading(true);
-        
-        setTimeout(() => {
-            this.user = { 
-                username, 
-                name: username.split('@')[0] || username,
-                email: username.includes('@') ? username : null
-            };
+        const email = username.includes('@') ? username : `${username}@example.com`;
+        fetch('http://localhost:5050/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: username, email: email })
+        })
+        .then(r => r.json())
+        .then(res => {
             this.showLoading(false);
-            this.showAlert('Éxito', 'Inicio de sesión exitoso');
-            // Aquí irías al menú principal
-            console.log('Usuario logueado:', this.user);
-        }, 1500);
+            if (res && res.success && res.user) {
+                this.user = { username, name: username.split('@')[0] || username, email };
+                this.showAlert('Éxito', 'Inicio de sesión exitoso');
+                console.log('Usuario logueado:', this.user);
+            } else {
+                const msg = (res && (res.error || res.message)) || 'Credenciales inválidas';
+                this.showAlert('Error', msg);
+            }
+        })
+        .catch(() => {
+            this.showLoading(false);
+            this.showAlert('Error', 'No se pudo conectar al servidor');
+        });
     }
 
     handleRegister() {
