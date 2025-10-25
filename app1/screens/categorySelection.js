@@ -28,8 +28,8 @@ export const renderCategorySelection = () => {
           <select id="category" class="form-input" required>
             <option value="">Selecciona una categoría</option>
             <option value="cultura-general-colombiana">Cultura General Colombiana</option>
-            <option value="deportes">Deportes</option>
-            <option value="superheroes">Superhéroes</option>
+            <option value="deportes">Mundo Deportivo</option>
+            <option value="superheroes">Mundo del entretenimiento</option>
           </select>
         </div>
         

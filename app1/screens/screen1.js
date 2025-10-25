@@ -53,7 +53,7 @@ export default function renderScreen1() {
                 <h1 class="form-title">Iniciar Sesión</h1>
                 <div class="form-container">
                     <div class="input-group">
-                        <input type="text" id="login-username" placeholder="Nombre de usuario/email" class="form-input">
+                        <input type="email" id="login-email" placeholder="Correo electrónico" class="form-input">
                     </div>
                     <div class="input-group">
                         <input type="password" id="login-password" placeholder="Contraseña" class="form-input">
@@ -172,28 +172,28 @@ export default function renderScreen1() {
   });
 
   document.getElementById("login-btn").addEventListener("click", async () => {
-    const username = document.getElementById("login-username").value;
+    const email = document.getElementById("login-email").value;
     const password = document.getElementById("login-password").value;
     
-    if (!username || !password) {
+    if (!email || !password) {
       alert("Por favor completa todos los campos");
       return;
     }
     
     try {
-      console.log("login", { username, password });
-      const response = await makeRequest("/users", "POST", { 
-        name: username, 
-        email: `${username}@example.com` 
+      console.log("login", { email, password });
+      const response = await makeRequest("/users/login", "POST", { 
+        email: email,
+        password: password
       });
       
       if (response.success) {
         alert("¡Inicio de sesión exitoso!");
-        memoryState.currentUser = username;
+        memoryState.currentUser = response.user.username;
         navigateTo("/main");
-        const lu = document.getElementById("login-username");
+        const le = document.getElementById("login-email");
         const lp = document.getElementById("login-password");
-        if (lu) lu.value = "";
+        if (le) le.value = "";
         if (lp) lp.value = "";
       } else {
         alert("Error al iniciar sesión: " + (response.error || "Error desconocido"));
@@ -221,10 +221,11 @@ export default function renderScreen1() {
     }
     
     try {
-      console.log("register", { name, email });
+      console.log("register", { name, email, password });
       const response = await makeRequest("/users", "POST", { 
         name: name, 
-        email: email 
+        email: email,
+        password: password
       });
       
       if (response.success) {

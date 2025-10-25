@@ -19,16 +19,17 @@ const initSocketInstance = (httpServer) => {
 
   io.on("connection", (socket) => {
     // Crear sala
-    socket.on("room:create", ({ code, host, category, maxParticipants, timePerQuestion }) => {
+    socket.on("room:create", ({ code, host, categoryId, maxParticipants, timePerQuestion, numQuestions }) => {
       if (!rooms.has(code)) {
         rooms.set(code, { 
           hostId: socket.id, 
           players: [], 
           createdAt: Date.now(),
           host,
-          category,
+          categoryId,
           maxParticipants,
-          timePerQuestion
+          timePerQuestion,
+          numQuestions
         });
         socket.join(code);
         socket.emit("room:created", { code });

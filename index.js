@@ -7,6 +7,7 @@ const cors = require("cors");
 const usersRouter = require("./server/routes/users.router");
 const screen1EventsRouter = require("./server/routes/screen1Events.router");
 const questionsRouter = require("./server/routes/questions.router");
+const categoriesRouter = require("./server/routes/categories.router");
 const { initSocketInstance } = require("./server/services/socket.service");
 
 const PORT = process.env.PORT || 5050;
@@ -36,6 +37,7 @@ app.get("/", (req, res) => {
 app.use("/", usersRouter);
 app.use("/", screen1EventsRouter);
 app.use("/", questionsRouter);
+app.use("/", categoriesRouter);
 
 // Services
 initSocketInstance(httpServer);
