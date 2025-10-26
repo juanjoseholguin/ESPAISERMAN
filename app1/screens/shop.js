@@ -105,11 +105,9 @@ export default function renderShop() {
 		const buyBtn = modal.querySelector('#m-buy');
 		buyBtn.textContent = `Comprar 🪙${data.price}`;
 
-		// Remover event listeners previos
 		const newBuyBtn = buyBtn.cloneNode(true);
 		buyBtn.parentNode.replaceChild(newBuyBtn, buyBtn);
 
-		// Agregar nuevo event listener para compra
 		newBuyBtn.addEventListener('click', () => {
 			const currentCoins = memoryState.currentUserCoins;
 			if (currentCoins >= data.price) {

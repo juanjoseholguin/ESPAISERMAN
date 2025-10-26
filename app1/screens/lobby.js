@@ -45,7 +45,6 @@ export default function renderLobby({ code } = {}) {
 			const li = document.createElement('li');
 			li.className = 'player-item';
 
-			// Crear avatar del jugador
 			const avatarDiv = document.createElement('div');
 			avatarDiv.className = 'player-avatar';
 			avatarDiv.style.backgroundColor = p.avatar_bg || '#F9D648';
@@ -57,7 +56,6 @@ export default function renderLobby({ code } = {}) {
 
 			avatarDiv.appendChild(avatarImg);
 
-			// Crear nombre del jugador
 			const nameSpan = document.createElement('span');
 			nameSpan.textContent = p.name;
 			nameSpan.className = 'player-name';

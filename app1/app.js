@@ -10,7 +10,6 @@ import renderMapScreen from './screens/mapScreen.js';
 
 const socket = io('/', { path: '/real-time' });
 
-// Cargar datos del usuario desde localStorage
 const savedCoins = localStorage.getItem('espaiserman_coins');
 const initialCoins = savedCoins !== null ? parseInt(savedCoins, 10) : 1000;
 
@@ -19,17 +18,15 @@ const savedAvatar = localStorage.getItem('espaiserman_avatar');
 const savedBgColor = localStorage.getItem('espaiserman_bg_color');
 const savedPassword = localStorage.getItem('espaiserman_password');
 
-// Estado simple en memoria para demo (rooms type Among Us)
 const memoryState = {
-	rooms: new Map(), // roomCode -> { createdAt, players: [] }
+	rooms: new Map(),
 	currentUser: savedUsername || null,
 	currentUserAvatar: savedAvatar || null,
 	currentUserBgColor: savedBgColor || null,
 	currentUserPassword: savedPassword || null,
-	currentUserCoins: initialCoins, // Monedas del usuario (persisten en localStorage)
+	currentUserCoins: initialCoins,
 	roomConfig: null,
 };
-// Exponer por si se requiere depurar en el navegador
 window.memoryState = memoryState;
 
 function clearScripts() {
@@ -115,7 +112,6 @@ async function makeRequest(url, method, body) {
 			body: body ? JSON.stringify(body) : undefined,
 		});
 
-		// Verificar si la respuesta es exitosa
 		if (!response.ok) {
 			const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
 			console.error(`❌ Error HTTP ${response.status}:`, errorData);
@@ -130,7 +126,6 @@ async function makeRequest(url, method, body) {
 	}
 }
 
-// Función helper para renderizar el contador de monedas
 function renderCoinCounter() {
 	const coins = memoryState.currentUserCoins || 0;
 	return `
@@ -141,33 +136,28 @@ function renderCoinCounter() {
   `;
 }
 
-// Función para actualizar monedas y persistir en localStorage
 function updateCoins(amount) {
 	memoryState.currentUserCoins = amount;
 	localStorage.setItem('espaiserman_coins', amount.toString());
 
-	// Actualizar UI si el contador está visible
 	const coinAmountEl = document.querySelector('.coin-amount');
 	if (coinAmountEl) {
 		coinAmountEl.textContent = amount;
 	}
 }
 
-// Función para agregar monedas (suma)
 function addCoins(amount) {
 	const newTotal = memoryState.currentUserCoins + amount;
 	updateCoins(newTotal);
 	return newTotal;
 }
 
-// Función para restar monedas (compras)
 function subtractCoins(amount) {
-	const newTotal = Math.max(0, memoryState.currentUserCoins - amount); // No permitir negativas
+	const newTotal = Math.max(0, memoryState.currentUserCoins - amount);
 	updateCoins(newTotal);
 	return newTotal;
 }
 
-// Funciones para actualizar y persistir datos del perfil
 function updateUsername(username) {
 	memoryState.currentUser = username;
 	localStorage.setItem('espaiserman_username', username);
@@ -187,8 +177,6 @@ function updatePassword(password) {
 	memoryState.currentUserPassword = password;
 	localStorage.setItem('espaiserman_password', password);
 }
-
-// Exponer funciones globalmente
 window.generateRoomCode = generateRoomCode;
 window.navigateTo = navigateTo;
 window.socket = socket;

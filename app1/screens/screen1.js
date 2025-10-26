@@ -153,11 +153,9 @@ export default function renderScreen1() {
 
 			if (response.success) {
 				alert('¡Inicio de sesión exitoso!');
-				// Solo actualizar el nombre si no existe uno guardado previamente
 				if (!memoryState.currentUser) {
 					updateUsername(response.user.username);
 				}
-				// Guardar la contraseña para mostrarla en el perfil
 				updatePassword(password);
 				navigateTo('/main');
 				const le = document.getElementById('login-email');
@@ -199,8 +197,8 @@ export default function renderScreen1() {
 
 			if (response.success) {
 				alert('¡Registro exitoso! Bienvenido a Espaiserman Trivia');
-				updateUsername(name); // Persiste en localStorage
-				updatePassword(password); // Guarda la contraseña
+				updateUsername(name);
+				updatePassword(password);
 				navigateTo('/main');
 				const rn = document.getElementById('register-name');
 				const re = document.getElementById('register-email');

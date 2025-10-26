@@ -1,7 +1,6 @@
 import { renderCoinCounter } from '../app.js';
 
 export const renderCategorySelection = async () => {
-	// Cargar categorías desde la API
 	let categoriesOptions = '<option value="">Selecciona una categoría</option>';
 
 	try {
@@ -79,10 +78,8 @@ window.createRoomWithCategory = async () => {
 		return;
 	}
 
-	// Generar código de sala
 	const roomCode = generateRoomCode();
 
-	// Guardar configuración de la sala en el estado
 	window.memoryState.roomConfig = {
 		code: roomCode,
 		category,
@@ -91,7 +88,6 @@ window.createRoomWithCategory = async () => {
 		host: window.memoryState.currentUser,
 	};
 
-	// Crear la sala en el servidor
 	try {
 		const response = await fetch('/api/rooms', {
 			method: 'POST',
@@ -108,7 +104,6 @@ window.createRoomWithCategory = async () => {
 		});
 
 		if (response.ok) {
-			// Conectar al socket y crear la sala
 			if (window.socket) {
 				window.socket.emit('room:create', {
 					code: roomCode,

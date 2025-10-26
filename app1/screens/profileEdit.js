@@ -69,11 +69,10 @@ export const renderProfileEdit = () => {
           </div>
         </div>
       </div>
-    </div>
+	</div>
   `;
 };
 
-// Modal selector de avatar (predefinidos + subir + drag&drop)
 window.openAvatarPicker = () => {
 	const modal = document.createElement('div');
 	modal.style.cssText =
@@ -111,7 +110,6 @@ window.openAvatarPicker = () => {
 	});
 	modal.querySelector('#close-avatar').addEventListener('click', () => modal.remove());
 
-	// drag & drop
 	const drop = modal.querySelector('#dropzone');
 	['dragenter', 'dragover'].forEach((evt) =>
 		drop.addEventListener(evt, (e) => {
@@ -142,7 +140,7 @@ function readFileAsDataUrl(file, cb) {
 }
 
 function applyAvatarSrc(src) {
-	updateAvatar(src); // Persiste en localStorage
+	updateAvatar(src);
 	const profileImg = document.querySelector('.profile-img');
 	if (profileImg) profileImg.src = src;
 }
@@ -154,15 +152,13 @@ window.handleAvatarFile = async (event) => {
 };
 
 window.selectColor = (color) => {
-	updateBgColor(color); // Persiste en localStorage
+	updateBgColor(color);
 
-	// Actualizar el color de fondo en la pantalla
 	const profilePicture = document.querySelector('.profile-picture');
 	if (profilePicture) {
 		profilePicture.style.backgroundColor = color;
 	}
 
-	// Remover selección anterior y agregar nueva
 	document.querySelectorAll('.color-option').forEach((option) => {
 		option.classList.remove('selected');
 	});
@@ -184,13 +180,11 @@ window.saveProfile = async () => {
 	}
 
 	try {
-		// Actualizar el usuario en la base de datos
 		const updateData = {
 			username,
 			avatar_bg: window.memoryState.currentUserBgColor,
 		};
 
-		// Persistir datos en localStorage
 		updateUsername(username);
 
 		alert('✅ Perfil actualizado exitosamente. Los cambios se han guardado.');

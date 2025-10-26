@@ -38,9 +38,8 @@ export default function renderCreateRoom() {
         </div>
       </div>
     </div>
-  `;
+    `;
 
-	// Cargar categorías al inicializar
 	loadCategories();
 
 	document.getElementById('back-create').addEventListener('click', () => {
@@ -59,7 +58,6 @@ export default function renderCreateRoom() {
 		}
 
 		try {
-			// Verificar que hay suficientes preguntas en la categoría
 			const questionsResponse = await makeRequest(`/categories/${categoryId}/questions`, 'GET');
 
 			if (questionsResponse.length < numQuestions) {
@@ -69,7 +67,6 @@ export default function renderCreateRoom() {
 				return;
 			}
 
-			// Crear sala
 			const socket = window.io('/', { path: '/real-time' });
 			const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 			let code = '';
