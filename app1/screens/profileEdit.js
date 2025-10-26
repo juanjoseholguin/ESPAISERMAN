@@ -4,6 +4,7 @@ export const renderProfileEdit = () => {
 	const currentUser = window.memoryState.currentUser || 'Usuario';
 	const userAvatar = window.memoryState.currentUserAvatar || '/assets/images/Group 4.png';
 	const userBgColor = window.memoryState.currentUserBgColor || '#F9D648';
+	const userPassword = window.memoryState.currentUserPassword || '••••••••';
 
 	const app = document.getElementById('app');
 	app.innerHTML = `
@@ -38,7 +39,7 @@ export const renderProfileEdit = () => {
           <div class="form-group">
             <label class="form-label">Contraseña</label>
             <div class="password-input-container">
-              <input type="text" id="password" class="form-input" placeholder="4bgvbSICJVpsEwGb" value="4bgvbSICJVpsEwGb">
+              <input type="password" id="password" class="form-input" value="${userPassword}" readonly style="background-color: #f3f4f6; cursor: default;">
               <button class="password-toggle" onclick="togglePassword()">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                   <path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z" stroke="currentColor" stroke-width="2"/>
@@ -176,7 +177,6 @@ window.togglePassword = () => {
 
 window.saveProfile = async () => {
 	const username = document.getElementById('username').value;
-	const password = document.getElementById('password').value;
 
 	if (!username) {
 		alert('El nombre de usuario es requerido');
@@ -189,10 +189,6 @@ window.saveProfile = async () => {
 			username,
 			avatar_bg: window.memoryState.currentUserBgColor,
 		};
-
-		if (password) {
-			updateData.password = password;
-		}
 
 		// Persistir datos en localStorage
 		updateUsername(username);

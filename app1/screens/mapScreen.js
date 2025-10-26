@@ -19,8 +19,7 @@ export default function renderMapScreen() {
         <div id="map" class="map"></div>
 
         <div class="map-controls">
-          <button id="scan-qr" class="btn-primary">Escanear QR</button>
-          <button id="view-questions" class="btn-secondary">Ver Preguntas</button>
+          <button id="view-questions" class="btn-primary">Ver Preguntas</button>
         </div>
       </div>
     </div>
@@ -156,50 +155,7 @@ async function loadQuestion(questionId) {
 }
 
 function setupMapEvents() {
-	document.getElementById('scan-qr').addEventListener('click', () => {
-		startQRScan();
-	});
-
 	document.getElementById('view-questions').addEventListener('click', () => {
 		navigateTo('/questions');
 	});
-}
-
-function startQRScan() {
-	if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-		const modal = document.createElement('div');
-		modal.style.cssText =
-			'position:fixed; inset:0; background:rgba(0,0,0,.9); display:flex; align-items:center; justify-content:center; z-index:1000;';
-		modal.innerHTML = `
-      <div style="background:#fff; border-radius:16px; padding:20px; width:90%; max-width:300px; text-align:center;">
-        <h3>Escanear QR</h3>
-        <video id="qr-video" style="width:100%; border-radius:8px;"></video>
-        <button id="close-scan" class="btn-primary" style="margin-top:12px;">Cerrar</button>
-      </div>`;
-
-		document.body.appendChild(modal);
-
-		const video = modal.querySelector('#qr-video');
-		const closeBtn = modal.querySelector('#close-scan');
-
-		navigator.mediaDevices
-			.getUserMedia({ video: { facingMode: 'environment' } })
-			.then((stream) => {
-				video.srcObject = stream;
-				video.play();
-			})
-			.catch((err) => {
-				console.error('Error accessing camera:', err);
-				video.innerHTML = '<p>No se puede acceder a la cámara</p>';
-			});
-
-		closeBtn.addEventListener('click', () => {
-			if (video.srcObject) {
-				video.srcObject.getTracks().forEach((track) => track.stop());
-			}
-			modal.remove();
-		});
-	} else {
-		alert('La cámara no está disponible en este dispositivo');
-	}
 }

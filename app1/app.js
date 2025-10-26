@@ -2,9 +2,7 @@ import renderSplashLoginRegister from './screens/screen1.js';
 import renderMainMenu from './screens/mainMenu.js';
 import renderJoinRoom from './screens/joinRoom.js';
 import renderCreateRoom from './screens/createRoom.js';
-import renderForgotPassword from './screens/forgotPassword.js';
 import renderLobby from './screens/lobby.js';
-import { renderChangePassword } from './screens/changePassword.js';
 import { renderCategorySelection } from './screens/categorySelection.js';
 import { renderProfileEdit } from './screens/profileEdit.js';
 import renderShop from './screens/shop.js';
@@ -19,6 +17,7 @@ const initialCoins = savedCoins !== null ? parseInt(savedCoins, 10) : 1000;
 const savedUsername = localStorage.getItem('espaiserman_username');
 const savedAvatar = localStorage.getItem('espaiserman_avatar');
 const savedBgColor = localStorage.getItem('espaiserman_bg_color');
+const savedPassword = localStorage.getItem('espaiserman_password');
 
 // Estado simple en memoria para demo (rooms type Among Us)
 const memoryState = {
@@ -26,6 +25,7 @@ const memoryState = {
 	currentUser: savedUsername || null,
 	currentUserAvatar: savedAvatar || null,
 	currentUserBgColor: savedBgColor || null,
+	currentUserPassword: savedPassword || null,
 	currentUserCoins: initialCoins, // Monedas del usuario (persisten en localStorage)
 	roomConfig: null,
 };
@@ -56,14 +56,6 @@ function renderRoute(currentRoute) {
 		case '/create':
 			clearScripts();
 			renderCreateRoom(currentRoute?.data);
-			break;
-		case '/forgot':
-			clearScripts();
-			renderForgotPassword(currentRoute?.data);
-			break;
-		case '/change-password':
-			clearScripts();
-			renderChangePassword(currentRoute?.data);
 			break;
 		case '/profile':
 			clearScripts();
@@ -191,6 +183,11 @@ function updateBgColor(color) {
 	localStorage.setItem('espaiserman_bg_color', color);
 }
 
+function updatePassword(password) {
+	memoryState.currentUserPassword = password;
+	localStorage.setItem('espaiserman_password', password);
+}
+
 // Exponer funciones globalmente
 window.generateRoomCode = generateRoomCode;
 window.navigateTo = navigateTo;
@@ -201,6 +198,7 @@ window.subtractCoins = subtractCoins;
 window.updateUsername = updateUsername;
 window.updateAvatar = updateAvatar;
 window.updateBgColor = updateBgColor;
+window.updatePassword = updatePassword;
 
 export {
 	navigateTo,
@@ -217,4 +215,5 @@ export {
 	updateUsername,
 	updateAvatar,
 	updateBgColor,
+	updatePassword,
 };

@@ -1,4 +1,4 @@
-import { makeRequest, navigateTo, memoryState, updateUsername } from '../app.js';
+import { makeRequest, navigateTo, memoryState, updateUsername, updatePassword } from '../app.js';
 
 export default function renderScreen1() {
 	const app = document.getElementById('app');
@@ -39,9 +39,6 @@ export default function renderScreen1() {
                     </div>
                     <div class="input-group">
                         <input type="password" id="login-password" placeholder="Contraseña" class="form-input">
-                    </div>
-                    <div class="forgot-password">
-                        <a href="#" class="forgot-link">Olvidaste tu contraseña?</a>
                     </div>
                     <button id="login-btn" class="btn-primary">Iniciar Sesión</button>
                 </div>
@@ -116,13 +113,6 @@ export default function renderScreen1() {
 		loginScreen.classList.remove('active');
 		registerScreen.classList.add('active');
 	});
-	const forgot = loginScreen.querySelector('.forgot-link');
-	if (forgot) {
-		forgot.addEventListener('click', (e) => {
-			e.preventDefault();
-			navigateTo('/forgot');
-		});
-	}
 	document.getElementById('go-to-login').addEventListener('click', () => {
 		const btn = document.getElementById('go-to-login');
 		btn.classList.add('btn-pressed');
@@ -167,6 +157,8 @@ export default function renderScreen1() {
 				if (!memoryState.currentUser) {
 					updateUsername(response.user.username);
 				}
+				// Guardar la contraseña para mostrarla en el perfil
+				updatePassword(password);
 				navigateTo('/main');
 				const le = document.getElementById('login-email');
 				const lp = document.getElementById('login-password');
@@ -208,6 +200,7 @@ export default function renderScreen1() {
 			if (response.success) {
 				alert('¡Registro exitoso! Bienvenido a Espaiserman Trivia');
 				updateUsername(name); // Persiste en localStorage
+				updatePassword(password); // Guarda la contraseña
 				navigateTo('/main');
 				const rn = document.getElementById('register-name');
 				const re = document.getElementById('register-email');
