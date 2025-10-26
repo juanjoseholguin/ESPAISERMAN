@@ -67,6 +67,10 @@ export const renderProfileEdit = () => {
             <button class="btn-secondary" onclick="navigateTo('/main')">Editar Perfil</button>
             <button class="btn-primary" onclick="saveProfile()">Guardar Cambios</button>
           </div>
+
+          <button class="btn-secondary" onclick="logout()" style="margin-top: 20px; background: #E74C3C; color: white;">
+            Cerrar Sesión
+          </button>
         </div>
       </div>
 	</div>

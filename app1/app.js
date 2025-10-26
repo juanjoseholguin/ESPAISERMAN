@@ -177,6 +177,21 @@ function updatePassword(password) {
 	memoryState.currentUserPassword = password;
 	localStorage.setItem('espaiserman_password', password);
 }
+
+function logout() {
+	localStorage.removeItem('espaiserman_username');
+	localStorage.removeItem('espaiserman_password');
+	localStorage.removeItem('espaiserman_avatar');
+	localStorage.removeItem('espaiserman_bg_color');
+
+	memoryState.currentUser = null;
+	memoryState.currentUserPassword = null;
+	memoryState.currentUserAvatar = null;
+	memoryState.currentUserBgColor = null;
+
+	navigateTo('/');
+}
+
 window.generateRoomCode = generateRoomCode;
 window.navigateTo = navigateTo;
 window.socket = socket;
@@ -187,6 +202,7 @@ window.updateUsername = updateUsername;
 window.updateAvatar = updateAvatar;
 window.updateBgColor = updateBgColor;
 window.updatePassword = updatePassword;
+window.logout = logout;
 
 export {
 	navigateTo,
@@ -204,4 +220,5 @@ export {
 	updateAvatar,
 	updateBgColor,
 	updatePassword,
+	logout,
 };

@@ -1,6 +1,11 @@
 import { makeRequest, navigateTo, memoryState, updateUsername, updatePassword } from '../app.js';
 
 export default function renderScreen1() {
+	if (memoryState.currentUser && memoryState.currentUserPassword) {
+		navigateTo('/main');
+		return;
+	}
+
 	const app = document.getElementById('app');
 	app.innerHTML = `
       <div id="splash-screen" class="screen active">
