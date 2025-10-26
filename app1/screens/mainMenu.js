@@ -1,13 +1,14 @@
-import { navigateTo } from "../app.js";
+import { navigateTo, renderCoinCounter } from '../app.js';
 
 export default function renderMainMenu() {
-  const app = document.getElementById("app");
-  app.innerHTML = `
+	const app = document.getElementById('app');
+	app.innerHTML = `
     <div id="main-menu" class="screen active">
       <div class="status-bar">
         <div class="time">9:41</div>
         <div class="status-icons"><div class="signal"></div><div class="wifi"></div><div class="battery"></div></div>
       </div>
+      ${renderCoinCounter()}
 
       <div class="main-content" style="gap:24px; align-items:center;">
         <div class="group4-container" style="margin-top:12px;">
@@ -23,29 +24,36 @@ export default function renderMainMenu() {
     </div>
   `;
 
-  document.getElementById("btn-join").addEventListener("click", () => {
-    const b = document.getElementById("btn-join"); b.classList.add("btn-pressed"); setTimeout(()=>b.classList.remove("btn-pressed"),120);
-    navigateTo("/join");
-  });
-  document.getElementById("btn-create").addEventListener("click", () => {
-    const b = document.getElementById("btn-create"); b.classList.add("btn-pressed"); setTimeout(()=>b.classList.remove("btn-pressed"),120);
-    navigateTo("/create");
-  });
-  document.getElementById("btn-profile").addEventListener("click", () => {
-    const b = document.getElementById("btn-profile"); b.classList.add("btn-pressed"); setTimeout(()=>b.classList.remove("btn-pressed"),120);
-    navigateTo("/profile");
-  });
-  document.getElementById("btn-map").addEventListener("click", () => {
-    const b = document.getElementById("btn-map"); b.classList.add("btn-pressed"); setTimeout(()=>b.classList.remove("btn-pressed"),120);
-    navigateTo("/map");
-  });
-  const shopBtn = document.getElementById("btn-shop");
-  if (shopBtn) {
-    shopBtn.addEventListener("click", () => {
-      shopBtn.classList.add("btn-pressed"); setTimeout(()=>shopBtn.classList.remove("btn-pressed"),120);
-      navigateTo("/shop");
-    });
-  }
+	document.getElementById('btn-join').addEventListener('click', () => {
+		const b = document.getElementById('btn-join');
+		b.classList.add('btn-pressed');
+		setTimeout(() => b.classList.remove('btn-pressed'), 120);
+		navigateTo('/join');
+	});
+	document.getElementById('btn-create').addEventListener('click', () => {
+		const b = document.getElementById('btn-create');
+		b.classList.add('btn-pressed');
+		setTimeout(() => b.classList.remove('btn-pressed'), 120);
+		navigateTo('/create');
+	});
+	document.getElementById('btn-profile').addEventListener('click', () => {
+		const b = document.getElementById('btn-profile');
+		b.classList.add('btn-pressed');
+		setTimeout(() => b.classList.remove('btn-pressed'), 120);
+		navigateTo('/profile');
+	});
+	document.getElementById('btn-map').addEventListener('click', () => {
+		const b = document.getElementById('btn-map');
+		b.classList.add('btn-pressed');
+		setTimeout(() => b.classList.remove('btn-pressed'), 120);
+		navigateTo('/map');
+	});
+	const shopBtn = document.getElementById('btn-shop');
+	if (shopBtn) {
+		shopBtn.addEventListener('click', () => {
+			shopBtn.classList.add('btn-pressed');
+			setTimeout(() => shopBtn.classList.remove('btn-pressed'), 120);
+			navigateTo('/shop');
+		});
+	}
 }
-
-

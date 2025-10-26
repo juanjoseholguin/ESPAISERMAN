@@ -1,30 +1,30 @@
-export const renderCategorySelection = async () => {
-  // Cargar categorías desde la API
-  let categoriesOptions = '<option value="">Selecciona una categoría</option>';
-  
-  try {
-    const response = await fetch('http://localhost:5050/categories');
-    if (response.ok) {
-      const categories = await response.json();
-      console.log('✅ Categorías cargadas:', categories);
-      
-      if (categories && categories.length > 0) {
-        categoriesOptions += categories.map(cat => 
-          `<option value="${cat.id}">${cat.name}</option>`
-        ).join('');
-      } else {
-        categoriesOptions += '<option value="">No hay categorías disponibles</option>';
-      }
-    } else {
-      console.error('❌ Error al cargar categorías:', response.status);
-      categoriesOptions += '<option value="">Error al cargar categorías</option>';
-    }
-  } catch (error) {
-    console.error('❌ Error de conexión:', error);
-    categoriesOptions += '<option value="">Error de conexión</option>';
-  }
+import { renderCoinCounter } from '../app.js';
 
-  return `
+export const renderCategorySelection = async () => {
+	// Cargar categorías desde la API
+	let categoriesOptions = '<option value="">Selecciona una categoría</option>';
+
+	try {
+		const response = await fetch('http://localhost:5050/categories');
+		if (response.ok) {
+			const categories = await response.json();
+			console.log('✅ Categorías cargadas:', categories);
+
+			if (categories && categories.length > 0) {
+				categoriesOptions += categories.map((cat) => `<option value="${cat.id}">${cat.name}</option>`).join('');
+			} else {
+				categoriesOptions += '<option value="">No hay categorías disponibles</option>';
+			}
+		} else {
+			console.error('❌ Error al cargar categorías:', response.status);
+			categoriesOptions += '<option value="">Error al cargar categorías</option>';
+		}
+	} catch (error) {
+		console.error('❌ Error de conexión:', error);
+		categoriesOptions += '<option value="">Error de conexión</option>';
+	}
+
+	return `
     <div class="screen category-selection-screen">
       <div class="header">
         <div class="time">9:41</div>
@@ -39,6 +39,7 @@ export const renderCategorySelection = async () => {
           <div class="battery"></div>
         </div>
       </div>
+      ${renderCoinCounter()}
 
       <div class="logo-container">
         <img src="/assets/images/Group 4.png" alt="ESPAISER-MAN" class="group4-image">
@@ -48,21 +49,21 @@ export const renderCategorySelection = async () => {
 
       <div class="form-container">
         <h2 class="form-title">Crear sala</h2>
-        
+
         <div class="input-group">
           <select id="category" class="form-input" required>
             ${categoriesOptions}
           </select>
         </div>
-        
+
         <div class="input-group">
           <input type="number" id="participants" placeholder="Escribe el número de participantes" class="form-input" min="2" max="10" required>
         </div>
-        
+
         <div class="input-group">
           <input type="number" id="timePerQuestion" placeholder="Tiempo por pregunta (segundos)" class="form-input" min="10" max="60" value="30" required>
         </div>
-        
+
         <button class="btn-primary" onclick="createRoomWithCategory()">Organizar preguntas</button>
       </div>
 
@@ -74,66 +75,66 @@ export const renderCategorySelection = async () => {
 };
 
 window.createRoomWithCategory = async () => {
-  const category = document.getElementById('category').value;
-  const participants = document.getElementById('participants').value;
-  const timePerQuestion = document.getElementById('timePerQuestion').value;
+	const category = document.getElementById('category').value;
+	const participants = document.getElementById('participants').value;
+	const timePerQuestion = document.getElementById('timePerQuestion').value;
 
-  if (!category || !participants || !timePerQuestion) {
-    alert('Por favor completa todos los campos');
-    return;
-  }
+	if (!category || !participants || !timePerQuestion) {
+		alert('Por favor completa todos los campos');
+		return;
+	}
 
-  if (participants < 2 || participants > 10) {
-    alert('El número de participantes debe estar entre 2 y 10');
-    return;
-  }
+	if (participants < 2 || participants > 10) {
+		alert('El número de participantes debe estar entre 2 y 10');
+		return;
+	}
 
-  // Generar código de sala
-  const roomCode = generateRoomCode();
-  
-  // Guardar configuración de la sala en el estado
-  window.memoryState.roomConfig = {
-    code: roomCode,
-    category,
-    maxParticipants: parseInt(participants),
-    timePerQuestion: parseInt(timePerQuestion),
-    host: window.memoryState.currentUser
-  };
+	// Generar código de sala
+	const roomCode = generateRoomCode();
 
-  // Crear la sala en el servidor
-  try {
-    const response = await fetch('/api/rooms', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        code: roomCode,
-        category,
-        maxParticipants: parseInt(participants),
-        timePerQuestion: parseInt(timePerQuestion),
-        host: window.memoryState.currentUser
-      })
-    });
+	// Guardar configuración de la sala en el estado
+	window.memoryState.roomConfig = {
+		code: roomCode,
+		category,
+		maxParticipants: parseInt(participants),
+		timePerQuestion: parseInt(timePerQuestion),
+		host: window.memoryState.currentUser,
+	};
 
-    if (response.ok) {
-      // Conectar al socket y crear la sala
-      if (window.socket) {
-        window.socket.emit('room:create', {
-          code: roomCode,
-          category,
-          maxParticipants: parseInt(participants),
-          timePerQuestion: parseInt(timePerQuestion),
-          host: window.memoryState.currentUser
-        });
-      }
-      
-      navigateTo('/lobby');
-    } else {
-      alert('Error al crear la sala');
-    }
-  } catch (error) {
-    console.error('Error:', error);
-    alert('Error de conexión');
-  }
+	// Crear la sala en el servidor
+	try {
+		const response = await fetch('/api/rooms', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				code: roomCode,
+				category,
+				maxParticipants: parseInt(participants),
+				timePerQuestion: parseInt(timePerQuestion),
+				host: window.memoryState.currentUser,
+			}),
+		});
+
+		if (response.ok) {
+			// Conectar al socket y crear la sala
+			if (window.socket) {
+				window.socket.emit('room:create', {
+					code: roomCode,
+					category,
+					maxParticipants: parseInt(participants),
+					timePerQuestion: parseInt(timePerQuestion),
+					host: window.memoryState.currentUser,
+				});
+			}
+
+			navigateTo('/lobby');
+		} else {
+			alert('Error al crear la sala');
+		}
+	} catch (error) {
+		console.error('Error:', error);
+		alert('Error de conexión');
+	}
 };

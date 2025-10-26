@@ -1,10 +1,11 @@
-import { navigateTo } from "../app.js";
+import { navigateTo, renderCoinCounter } from '../app.js';
 
 export default function renderJoinRoom() {
-  const app = document.getElementById("app");
-  app.innerHTML = `
+	const app = document.getElementById('app');
+	app.innerHTML = `
     <div class="screen active">
       <div class="status-bar"><div class="time">9:41</div><div class="status-icons"><div class="signal"></div><div class="wifi"></div><div class="battery"></div></div></div>
+      ${renderCoinCounter()}
       <button class="back-button" id="back-join"><div class="back-arrow"></div></button>
       <div class="main-content" style="gap:16px;">
         <div class="group4-container" style="margin-top:12px; text-align:center;">
@@ -19,21 +20,24 @@ export default function renderJoinRoom() {
     </div>
   `;
 
-  document.getElementById("back-join").addEventListener("click", () => { navigateTo("/main"); });
-  document.getElementById("btn-join-room").addEventListener("click", () => {
-    const code = (document.getElementById("room-code").value || "").toUpperCase().trim();
-    if (!code) { alert("Ingresa el código"); return; }
-    const socket = window.io("/", { path: "/real-time" });
-    const playerName = window.memoryState?.currentUser || "Jugador";
-    socket.emit("room:join", { 
-      code, 
-      playerName,
-      avatar_url: window.memoryState.currentUserAvatar,
-      avatar_bg: window.memoryState.currentUserBgColor
-    });
-    socket.on("room:error", (e) => alert(e.message));
-    socket.on("room:joined", () => navigateTo("/lobby", { code }));
-  });
+	document.getElementById('back-join').addEventListener('click', () => {
+		navigateTo('/main');
+	});
+	document.getElementById('btn-join-room').addEventListener('click', () => {
+		const code = (document.getElementById('room-code').value || '').toUpperCase().trim();
+		if (!code) {
+			alert('Ingresa el código');
+			return;
+		}
+		const socket = window.io('/', { path: '/real-time' });
+		const playerName = window.memoryState?.currentUser || 'Jugador';
+		socket.emit('room:join', {
+			code,
+			playerName,
+			avatar_url: window.memoryState.currentUserAvatar,
+			avatar_bg: window.memoryState.currentUserBgColor,
+		});
+		socket.on('room:error', (e) => alert(e.message));
+		socket.on('room:joined', () => navigateTo('/lobby', { code }));
+	});
 }
-
-

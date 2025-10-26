@@ -1,10 +1,11 @@
-import { navigateTo } from "../app.js";
+import { navigateTo, renderCoinCounter, subtractCoins, memoryState } from '../app.js';
 
 export default function renderShop() {
-  const app = document.getElementById("app");
-  app.innerHTML = `
+	const app = document.getElementById('app');
+	app.innerHTML = `
     <div class="screen active">
       <div class="status-bar"><div class="time">9:41</div><div class="status-icons"><div class="signal"></div><div class="wifi"></div><div class="battery"></div></div></div>
+      ${renderCoinCounter()}
       <button class="back-button" id="back-shop"><div class="back-arrow"></div></button>
       <div class="main-content" style="gap:16px;">
         <div class="group4-container" style="margin-top:12px; text-align:center;">
@@ -34,11 +35,14 @@ export default function renderShop() {
     </div>
   `;
 
-  document.getElementById("back-shop").addEventListener("click", () => { navigateTo("/main"); });
+	document.getElementById('back-shop').addEventListener('click', () => {
+		navigateTo('/main');
+	});
 
-  const modal = document.createElement("div");
-  modal.style.cssText = "position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.55); z-index:999; backdrop-filter: blur(2px);";
-  modal.innerHTML = `
+	const modal = document.createElement('div');
+	modal.style.cssText =
+		'position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.55); z-index:999; backdrop-filter: blur(2px);';
+	modal.innerHTML = `
     <div id="shop-modal" style="background:rgba(249,214,72,0.95); border-radius:24px; padding:20px; width:85%; max-width:320px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.4);">
       <h2 id="m-title" style="margin-bottom:4px; font-size:26px;">Título</h2>
       <div id="m-sub" style="opacity:.9; margin-bottom:12px;">Subtítulo</div>
@@ -52,28 +56,79 @@ export default function renderShop() {
         <button id="m-buy" class="btn-primary" style="max-width:180px; background:#11A36B; border-color:#0C6E4A;">Comprar 🪙200</button>
       </div>
     </div>`;
-  document.body.appendChild(modal);
+	document.body.appendChild(modal);
 
-  function openModal(key) {
-    const data = {
-      empanada: { title: "Empanadirri", sub: "Potenciador de energía", img: "/assets/images/empanada.png", phrase: "Pa' aguantar el hambre", desc: "Recupera una vida" },
-      guaro: { title: "Media", sub: "Aguardiente del tiempo", img: "/assets/images/guaro.png", phrase: "Emborrachar el reloj", desc: "Suma 5 segundos más al reloj" },
-      chicharron: { title: "Chichaghrrrom", sub: "Peganito pero sabroso", img: "/assets/images/chicharron.png", phrase: "Calle y diente", desc: "Duplica tu próximo puntaje" },
-      cafe: { title: "Café", sub: "Despiértese pues", img: "/assets/images/cafe.png", phrase: "Abra ese ojo", desc: "Acelera la siguiente pregunta" }
-    }[key];
-    if (!data) return;
-    modal.querySelector('#m-title').textContent = data.title;
-    modal.querySelector('#m-sub').textContent = data.sub;
-    modal.querySelector('#m-img').src = data.img;
-    modal.querySelector('#m-phrase').textContent = data.phrase;
-    modal.querySelector('#m-desc').textContent = data.desc;
-    modal.style.display = 'flex';
-  }
+	function openModal(key) {
+		const itemsData = {
+			empanada: {
+				title: 'Empanadirri',
+				sub: 'Potenciador de energía',
+				img: '/assets/images/empanada.png',
+				phrase: "Pa' aguantar el hambre",
+				desc: 'Recupera una vida',
+				price: 200,
+			},
+			guaro: {
+				title: 'Media',
+				sub: 'Aguardiente del tiempo',
+				img: '/assets/images/guaro.png',
+				phrase: 'Emborrachar el reloj',
+				desc: 'Suma 5 segundos más al reloj',
+				price: 300,
+			},
+			chicharron: {
+				title: 'Chichaghrrrom',
+				sub: 'Peganito pero sabroso',
+				img: '/assets/images/chicharron.png',
+				phrase: 'Calle y diente',
+				desc: 'Duplica tu próximo puntaje',
+				price: 500,
+			},
+			cafe: {
+				title: 'Café',
+				sub: 'Despiértese pues',
+				img: '/assets/images/cafe.png',
+				phrase: 'Abra ese ojo',
+				desc: 'Acelera la siguiente pregunta',
+				price: 150,
+			},
+		};
 
-  document.querySelectorAll('.shop-card').forEach(btn => {
-    btn.addEventListener('click', () => openModal(btn.getAttribute('data-item')));
-  });
-  modal.querySelector('#m-back').addEventListener('click', () => { modal.style.display = 'none'; });
+		const data = itemsData[key];
+		if (!data) return;
+
+		modal.querySelector('#m-title').textContent = data.title;
+		modal.querySelector('#m-sub').textContent = data.sub;
+		modal.querySelector('#m-img').src = data.img;
+		modal.querySelector('#m-phrase').textContent = data.phrase;
+		modal.querySelector('#m-desc').textContent = data.desc;
+
+		const buyBtn = modal.querySelector('#m-buy');
+		buyBtn.textContent = `Comprar 🪙${data.price}`;
+
+		// Remover event listeners previos
+		const newBuyBtn = buyBtn.cloneNode(true);
+		buyBtn.parentNode.replaceChild(newBuyBtn, buyBtn);
+
+		// Agregar nuevo event listener para compra
+		newBuyBtn.addEventListener('click', () => {
+			const currentCoins = memoryState.currentUserCoins;
+			if (currentCoins >= data.price) {
+				subtractCoins(data.price);
+				alert(`✅ ¡Compraste ${data.title}! Te quedan ${memoryState.currentUserCoins} monedas.`);
+				modal.style.display = 'none';
+			} else {
+				alert(`❌ No tienes suficientes monedas. Necesitas ${data.price} pero solo tienes ${currentCoins}.`);
+			}
+		});
+
+		modal.style.display = 'flex';
+	}
+
+	document.querySelectorAll('.shop-card').forEach((btn) => {
+		btn.addEventListener('click', () => openModal(btn.getAttribute('data-item')));
+	});
+	modal.querySelector('#m-back').addEventListener('click', () => {
+		modal.style.display = 'none';
+	});
 }
-
-

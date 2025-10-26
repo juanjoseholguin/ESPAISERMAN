@@ -1,12 +1,12 @@
-import { navigateTo } from "../app.js";
+import { navigateTo, renderCoinCounter } from '../app.js';
 
 export const renderProfileEdit = () => {
-  const currentUser = window.memoryState.currentUser;
-  const userAvatar = window.memoryState.currentUserAvatar || '/assets/images/Group 4.png';
-  const userBgColor = window.memoryState.currentUserBgColor || '#F9D648';
+	const currentUser = window.memoryState.currentUser;
+	const userAvatar = window.memoryState.currentUserAvatar || '/assets/images/Group 4.png';
+	const userBgColor = window.memoryState.currentUserBgColor || '#F9D648';
 
-  const app = document.getElementById('app');
-  app.innerHTML = `
+	const app = document.getElementById('app');
+	app.innerHTML = `
     <div class="screen profile-edit-screen active">
       <div class="status-bar">
         <div class="time">9:41</div>
@@ -16,6 +16,7 @@ export const renderProfileEdit = () => {
           <div class="battery"></div>
         </div>
       </div>
+      ${renderCoinCounter()}
       <button class="back-button" onclick="navigateTo('/main')">
         <div class="back-arrow"></div>
       </button>
@@ -81,9 +82,10 @@ export const renderProfileEdit = () => {
 
 // Modal selector de avatar (predefinidos + subir + drag&drop)
 window.openAvatarPicker = () => {
-  const modal = document.createElement('div');
-  modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; z-index:1000; backdrop-filter:blur(2px)';
-  modal.innerHTML = `
+	const modal = document.createElement('div');
+	modal.style.cssText =
+		'position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; z-index:1000; backdrop-filter:blur(2px)';
+	modal.innerHTML = `
     <div style="background:#fff; width:90%; max-width:360px; border-radius:16px; padding:16px;">
       <h3 style="margin:0 0 8px 0; text-align:center;">Elige tu avatar</h3>
       <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
@@ -102,98 +104,112 @@ window.openAvatarPicker = () => {
         <button id="close-avatar" class="btn-primary" style="max-width:160px; background:#1E3A8A; border-color:#0E1A34;">Cerrar</button>
       </div>
     </div>`;
-  document.body.appendChild(modal);
+	document.body.appendChild(modal);
 
-  modal.querySelectorAll('.preset-avatar').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const src = btn.getAttribute('data-src');
-      applyAvatarSrc(src);
-      modal.remove();
-    });
-  });
-  modal.querySelector('#pick-file').addEventListener('click', () => {
-    document.getElementById('avatarInput').click();
-  });
-  modal.querySelector('#close-avatar').addEventListener('click', () => modal.remove());
+	modal.querySelectorAll('.preset-avatar').forEach((btn) => {
+		btn.addEventListener('click', () => {
+			const src = btn.getAttribute('data-src');
+			applyAvatarSrc(src);
+			modal.remove();
+		});
+	});
+	modal.querySelector('#pick-file').addEventListener('click', () => {
+		document.getElementById('avatarInput').click();
+	});
+	modal.querySelector('#close-avatar').addEventListener('click', () => modal.remove());
 
-  // drag & drop
-  const drop = modal.querySelector('#dropzone');
-  ;['dragenter','dragover'].forEach(evt => drop.addEventListener(evt, e => { e.preventDefault(); drop.style.background = '#EEF2FF'; }));
-  ;['dragleave','drop'].forEach(evt => drop.addEventListener(evt, e => { e.preventDefault(); drop.style.background = ''; }));
-  drop.addEventListener('drop', (e) => {
-    const file = e.dataTransfer.files?.[0];
-    if (file) readFileAsDataUrl(file, (dataUrl) => { applyAvatarSrc(dataUrl); modal.remove(); });
-  });
+	// drag & drop
+	const drop = modal.querySelector('#dropzone');
+	['dragenter', 'dragover'].forEach((evt) =>
+		drop.addEventListener(evt, (e) => {
+			e.preventDefault();
+			drop.style.background = '#EEF2FF';
+		})
+	);
+	['dragleave', 'drop'].forEach((evt) =>
+		drop.addEventListener(evt, (e) => {
+			e.preventDefault();
+			drop.style.background = '';
+		})
+	);
+	drop.addEventListener('drop', (e) => {
+		const file = e.dataTransfer.files?.[0];
+		if (file)
+			readFileAsDataUrl(file, (dataUrl) => {
+				applyAvatarSrc(dataUrl);
+				modal.remove();
+			});
+	});
 };
 
 function readFileAsDataUrl(file, cb) {
-  const reader = new FileReader();
-  reader.onload = (e) => cb(e.target.result);
-  reader.readAsDataURL(file);
+	const reader = new FileReader();
+	reader.onload = (e) => cb(e.target.result);
+	reader.readAsDataURL(file);
 }
 
 function applyAvatarSrc(src) {
-  window.memoryState.currentUserAvatar = src;
-  const profileImg = document.querySelector('.profile-img');
-  if (profileImg) profileImg.src = src;
+	window.memoryState.currentUserAvatar = src;
+	const profileImg = document.querySelector('.profile-img');
+	if (profileImg) profileImg.src = src;
 }
 
 window.handleAvatarFile = async (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-  readFileAsDataUrl(file, (dataUrl) => applyAvatarSrc(dataUrl));
+	const file = event.target.files[0];
+	if (!file) return;
+	readFileAsDataUrl(file, (dataUrl) => applyAvatarSrc(dataUrl));
 };
 
 window.selectColor = (color) => {
-  window.memoryState.currentUserBgColor = color;
-  
-  // Actualizar el color de fondo en la pantalla
-  const profilePicture = document.querySelector('.profile-picture');
-  if (profilePicture) {
-    profilePicture.style.backgroundColor = color;
-  }
-  
-  // Remover selección anterior y agregar nueva
-  document.querySelectorAll('.color-option').forEach(option => {
-    option.classList.remove('selected');
-  });
-  document.querySelector(`[data-color="${color}"]`).classList.add('selected');
+	window.memoryState.currentUserBgColor = color;
+
+	// Actualizar el color de fondo en la pantalla
+	const profilePicture = document.querySelector('.profile-picture');
+	if (profilePicture) {
+		profilePicture.style.backgroundColor = color;
+	}
+
+	// Remover selección anterior y agregar nueva
+	document.querySelectorAll('.color-option').forEach((option) => {
+		option.classList.remove('selected');
+	});
+	document.querySelector(`[data-color="${color}"]`).classList.add('selected');
 };
 
 window.togglePassword = () => {
-  const passwordInput = document.getElementById('password');
-  const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-  passwordInput.setAttribute('type', type);
+	const passwordInput = document.getElementById('password');
+	const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+	passwordInput.setAttribute('type', type);
 };
 
 window.saveProfile = async () => {
-  const username = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
+	const username = document.getElementById('username').value;
+	const password = document.getElementById('password').value;
 
-  if (!username) {
-    alert('El nombre de usuario es requerido');
-    return;
-  }
+	if (!username) {
+		alert('El nombre de usuario es requerido');
+		return;
+	}
 
-  try {
-    // Actualizar el usuario en la base de datos
-    const updateData = {
-      username,
-      avatar_bg: window.memoryState.currentUserBgColor
-    };
+	try {
+		// Actualizar el usuario en la base de datos
+		const updateData = {
+			username,
+			avatar_bg: window.memoryState.currentUserBgColor,
+		};
 
-    if (password) {
-      updateData.password = password;
-    }
+		if (password) {
+			updateData.password = password;
+		}
 
-    // Aquí necesitarías el ID del usuario actual
-    // Por ahora solo actualizamos el estado local
-    window.memoryState.currentUser = username;
-    
-    alert('Perfil actualizado exitosamente');
-    navigateTo('/main');
-  } catch (error) {
-    console.error('Error:', error);
-    alert('Error al actualizar el perfil');
-  }
+		// Aquí necesitarías el ID del usuario actual
+		// Por ahora solo actualizamos el estado local
+		window.memoryState.currentUser = username;
+
+		alert('Perfil actualizado exitosamente');
+		navigateTo('/main');
+	} catch (error) {
+		console.error('Error:', error);
+		alert('Error al actualizar el perfil');
+	}
 };
