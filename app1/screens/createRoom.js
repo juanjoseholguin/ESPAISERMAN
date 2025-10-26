@@ -4,7 +4,6 @@ export default function renderCreateRoom() {
 	const app = document.getElementById('app');
 	app.innerHTML = `
     <div class="screen active">
-      <div class="status-bar"><div class="time">9:41</div><div class="status-icons"><div class="signal"></div><div class="wifi"></div><div class="battery"></div></div></div>
       ${renderCoinCounter()}
       <button class="back-button" id="back-create"><div class="back-arrow"></div></button>
       <div class="main-content" style="gap:16px;">

@@ -4,10 +4,6 @@ export default function renderMainMenu() {
 	const app = document.getElementById('app');
 	app.innerHTML = `
     <div id="main-menu" class="screen active">
-      <div class="status-bar">
-        <div class="time">9:41</div>
-        <div class="status-icons"><div class="signal"></div><div class="wifi"></div><div class="battery"></div></div>
-      </div>
       ${renderCoinCounter()}
 
       <div class="main-content" style="gap:24px; align-items:center;">

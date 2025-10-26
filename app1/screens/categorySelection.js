@@ -26,20 +26,10 @@ export const renderCategorySelection = async () => {
 
 	return `
     <div class="screen category-selection-screen">
-      <div class="header">
-        <div class="time">9:41</div>
-        <button class="back-btn" onclick="navigateTo('/main')">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M15 18L9 12L15 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-        <div class="status-icons">
-          <div class="signal"></div>
-          <div class="wifi"></div>
-          <div class="battery"></div>
-        </div>
-      </div>
       ${renderCoinCounter()}
+      <button class="back-button" onclick="navigateTo('/main')">
+        <div class="back-arrow"></div>
+      </button>
 
       <div class="logo-container">
         <img src="/assets/images/Group 4.png" alt="ESPAISER-MAN" class="group4-image">

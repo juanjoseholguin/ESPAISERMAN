@@ -57,7 +57,7 @@ body {
    ======================================== */
 .coin-counter {
 	position: absolute;
-	top: 60px;
+	top: 20px;
 	right: 20px;
 	display: flex;
 	align-items: center;
@@ -134,7 +134,7 @@ body {
    ======================================== */
 .back-button {
 	position: absolute;
-	top: 60px;
+	top: 20px;
 	left: 20px;
 	width: 40px;
 	height: 40px;
@@ -166,7 +166,7 @@ body {
 	display: flex;
 	flex-direction: column;
 	padding: 20px;
-	padding-top: 100px;
+	padding-top: 80px;
 	overflow-y: auto;
 	-webkit-overflow-scrolling: touch;
 }
@@ -717,7 +717,7 @@ body {
 	display: flex;
 	flex-direction: column;
 	padding: 20px;
-	padding-top: 100px;
+	padding-top: 80px;
 }
 
 .map-header {

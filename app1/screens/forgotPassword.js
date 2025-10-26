@@ -1,10 +1,9 @@
-import { navigateTo } from "../app.js";
+import { navigateTo } from '../app.js';
 
 export default function renderForgotPassword() {
-  const app = document.getElementById("app");
-  app.innerHTML = `
+	const app = document.getElementById('app');
+	app.innerHTML = `
     <div class="screen active">
-      <div class="status-bar"><div class="time">9:41</div><div class="status-icons"><div class="signal"></div><div class="wifi"></div><div class="battery"></div></div></div>
       <button class="back-button" id="back-forgot"><div class="back-arrow"></div></button>
       <div class="main-content" style="gap:16px;">
         <div class="group4-container" style="margin-top:12px; text-align:center;">
@@ -19,10 +18,10 @@ export default function renderForgotPassword() {
     </div>
   `;
 
-  document.getElementById("back-forgot").addEventListener("click", () => { navigateTo("/"); });
-  document.getElementById("btn-forgot").addEventListener("click", () => {
-    navigateTo("/change-password");
-  });
+	document.getElementById('back-forgot').addEventListener('click', () => {
+		navigateTo('/');
+	});
+	document.getElementById('btn-forgot').addEventListener('click', () => {
+		navigateTo('/change-password');
+	});
 }
-
-

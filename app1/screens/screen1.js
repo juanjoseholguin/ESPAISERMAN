@@ -1,18 +1,9 @@
-import { makeRequest, navigateTo, memoryState } from "../app.js";
+import { makeRequest, navigateTo, memoryState } from '../app.js';
 
 export default function renderScreen1() {
-  const app = document.getElementById("app");
-  app.innerHTML = `
+	const app = document.getElementById('app');
+	app.innerHTML = `
       <div id="splash-screen" class="screen active">
-        <div class="status-bar">
-            <div class="time">9:41</div>
-            <div class="status-icons">
-                <div class="signal"></div>
-                <div class="wifi"></div>
-                <div class="battery"></div>
-            </div>
-        </div>
-
         <div class="main-content" style="justify-content: space-between;">
             <div class="logo-section">
                 <div class="group4-container">
@@ -29,15 +20,6 @@ export default function renderScreen1() {
       </div>
 
       <div id="login-screen" class="screen">
-        <div class="status-bar">
-            <div class="time">9:41</div>
-            <div class="status-icons">
-                <div class="signal"></div>
-                <div class="wifi"></div>
-                <div class="battery"></div>
-            </div>
-        </div>
-
         <button class="back-button" id="back-from-login">
             <div class="back-arrow"></div>
         </button>
@@ -73,14 +55,6 @@ export default function renderScreen1() {
       </div>
 
       <div id="register-screen" class="screen">
-        <div class="status-bar">
-            <div class="time">9:41</div>
-            <div class="status-icons">
-                <div class="signal"></div>
-                <div class="wifi"></div>
-                <div class="battery"></div>
-            </div>
-        </div>
         <button class="back-button" id="back-from-register">
             <div class="back-arrow"></div>
         </button>
@@ -116,136 +90,136 @@ export default function renderScreen1() {
       </div>
       `;
 
-  const splashScreen = document.getElementById("splash-screen");
-  const loginScreen = document.getElementById("login-screen");
-  const registerScreen = document.getElementById("register-screen");
+	const splashScreen = document.getElementById('splash-screen');
+	const loginScreen = document.getElementById('login-screen');
+	const registerScreen = document.getElementById('register-screen');
 
-  document.getElementById("splash-register").addEventListener("click", () => {
-    const btn = document.getElementById("splash-register");
-    btn.classList.add("btn-pressed");
-    setTimeout(() => btn.classList.remove("btn-pressed"), 120);
-    splashScreen.classList.remove("active");
-    registerScreen.classList.add("active");
-  });
-  document.getElementById("splash-login").addEventListener("click", () => {
-    const btn = document.getElementById("splash-login");
-    btn.classList.add("btn-pressed");
-    setTimeout(() => btn.classList.remove("btn-pressed"), 120);
-    splashScreen.classList.remove("active");
-    loginScreen.classList.add("active");
-  });
+	document.getElementById('splash-register').addEventListener('click', () => {
+		const btn = document.getElementById('splash-register');
+		btn.classList.add('btn-pressed');
+		setTimeout(() => btn.classList.remove('btn-pressed'), 120);
+		splashScreen.classList.remove('active');
+		registerScreen.classList.add('active');
+	});
+	document.getElementById('splash-login').addEventListener('click', () => {
+		const btn = document.getElementById('splash-login');
+		btn.classList.add('btn-pressed');
+		setTimeout(() => btn.classList.remove('btn-pressed'), 120);
+		splashScreen.classList.remove('active');
+		loginScreen.classList.add('active');
+	});
 
-  document.getElementById("go-to-register").addEventListener("click", () => {
-    const btn = document.getElementById("go-to-register");
-    btn.classList.add("btn-pressed");
-    setTimeout(() => btn.classList.remove("btn-pressed"), 120);
-    loginScreen.classList.remove("active");
-    registerScreen.classList.add("active");
-  });
-  const forgot = loginScreen.querySelector('.forgot-link');
-  if (forgot) {
-    forgot.addEventListener('click', (e) => {
-      e.preventDefault();
-      navigateTo('/forgot');
-    });
-  }
-  document.getElementById("go-to-login").addEventListener("click", () => {
-    const btn = document.getElementById("go-to-login");
-    btn.classList.add("btn-pressed");
-    setTimeout(() => btn.classList.remove("btn-pressed"), 120);
-    registerScreen.classList.remove("active");
-    loginScreen.classList.add("active");
-  });
-  document.getElementById("back-from-register").addEventListener("click", () => {
-    const btn = document.getElementById("back-from-register");
-    btn.classList.add("btn-pressed");
-    setTimeout(() => btn.classList.remove("btn-pressed"), 120);
-    registerScreen.classList.remove("active");
-    splashScreen.classList.add("active");
-  });
-  document.getElementById("back-from-login").addEventListener("click", () => {
-    const btn = document.getElementById("back-from-login");
-    btn.classList.add("btn-pressed");
-    setTimeout(() => btn.classList.remove("btn-pressed"), 120);
-    loginScreen.classList.remove("active");
-    splashScreen.classList.add("active");
-  });
+	document.getElementById('go-to-register').addEventListener('click', () => {
+		const btn = document.getElementById('go-to-register');
+		btn.classList.add('btn-pressed');
+		setTimeout(() => btn.classList.remove('btn-pressed'), 120);
+		loginScreen.classList.remove('active');
+		registerScreen.classList.add('active');
+	});
+	const forgot = loginScreen.querySelector('.forgot-link');
+	if (forgot) {
+		forgot.addEventListener('click', (e) => {
+			e.preventDefault();
+			navigateTo('/forgot');
+		});
+	}
+	document.getElementById('go-to-login').addEventListener('click', () => {
+		const btn = document.getElementById('go-to-login');
+		btn.classList.add('btn-pressed');
+		setTimeout(() => btn.classList.remove('btn-pressed'), 120);
+		registerScreen.classList.remove('active');
+		loginScreen.classList.add('active');
+	});
+	document.getElementById('back-from-register').addEventListener('click', () => {
+		const btn = document.getElementById('back-from-register');
+		btn.classList.add('btn-pressed');
+		setTimeout(() => btn.classList.remove('btn-pressed'), 120);
+		registerScreen.classList.remove('active');
+		splashScreen.classList.add('active');
+	});
+	document.getElementById('back-from-login').addEventListener('click', () => {
+		const btn = document.getElementById('back-from-login');
+		btn.classList.add('btn-pressed');
+		setTimeout(() => btn.classList.remove('btn-pressed'), 120);
+		loginScreen.classList.remove('active');
+		splashScreen.classList.add('active');
+	});
 
-  document.getElementById("login-btn").addEventListener("click", async () => {
-    const email = document.getElementById("login-email").value;
-    const password = document.getElementById("login-password").value;
-    
-    if (!email || !password) {
-      alert("Por favor completa todos los campos");
-      return;
-    }
-    
-    try {
-      console.log("login", { email, password });
-      const response = await makeRequest("/users/login", "POST", { 
-        email: email,
-        password: password
-      });
-      
-      if (response.success) {
-        alert("¡Inicio de sesión exitoso!");
-        memoryState.currentUser = response.user.username;
-        navigateTo("/main");
-        const le = document.getElementById("login-email");
-        const lp = document.getElementById("login-password");
-        if (le) le.value = "";
-        if (lp) lp.value = "";
-      } else {
-        alert("Error al iniciar sesión: " + (response.error || "Error desconocido"));
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      alert("Error al conectar con el servidor");
-    }
-  });
+	document.getElementById('login-btn').addEventListener('click', async () => {
+		const email = document.getElementById('login-email').value;
+		const password = document.getElementById('login-password').value;
 
-  document.getElementById("register-btn").addEventListener("click", async () => {
-    const name = document.getElementById("register-name").value;
-    const email = document.getElementById("register-email").value;
-    const password = document.getElementById("register-password").value;
-    const confirmPassword = document.getElementById("register-confirm-password").value;
-    
-    if (!name || !email || !password || !confirmPassword) {
-      alert("Por favor completa todos los campos");
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      alert("Las contraseñas no coinciden");
-      return;
-    }
-    
-    try {
-      console.log("register", { name, email, password });
-      const response = await makeRequest("/users", "POST", { 
-        name: name, 
-        email: email,
-        password: password
-      });
-      
-      if (response.success) {
-        alert("¡Registro exitoso! Bienvenido a Espaiserman Trivia");
-        memoryState.currentUser = name;
-        navigateTo("/main");
-        const rn = document.getElementById("register-name");
-        const re = document.getElementById("register-email");
-        const rp = document.getElementById("register-password");
-        const rcp = document.getElementById("register-confirm-password");
-        if (rn) rn.value = "";
-        if (re) re.value = "";
-        if (rp) rp.value = "";
-        if (rcp) rcp.value = "";
-      } else {
-        alert("Error al registrarse: " + (response.error || "Error desconocido"));
-      }
-    } catch (error) {
-      console.error("Register error:", error);
-      alert("Error al conectar con el servidor");
-    }
-  });
+		if (!email || !password) {
+			alert('Por favor completa todos los campos');
+			return;
+		}
+
+		try {
+			console.log('login', { email, password });
+			const response = await makeRequest('/users/login', 'POST', {
+				email: email,
+				password: password,
+			});
+
+			if (response.success) {
+				alert('¡Inicio de sesión exitoso!');
+				memoryState.currentUser = response.user.username;
+				navigateTo('/main');
+				const le = document.getElementById('login-email');
+				const lp = document.getElementById('login-password');
+				if (le) le.value = '';
+				if (lp) lp.value = '';
+			} else {
+				alert('Error al iniciar sesión: ' + (response.error || 'Error desconocido'));
+			}
+		} catch (error) {
+			console.error('Login error:', error);
+			alert('Error al conectar con el servidor');
+		}
+	});
+
+	document.getElementById('register-btn').addEventListener('click', async () => {
+		const name = document.getElementById('register-name').value;
+		const email = document.getElementById('register-email').value;
+		const password = document.getElementById('register-password').value;
+		const confirmPassword = document.getElementById('register-confirm-password').value;
+
+		if (!name || !email || !password || !confirmPassword) {
+			alert('Por favor completa todos los campos');
+			return;
+		}
+
+		if (password !== confirmPassword) {
+			alert('Las contraseñas no coinciden');
+			return;
+		}
+
+		try {
+			console.log('register', { name, email, password });
+			const response = await makeRequest('/users', 'POST', {
+				name: name,
+				email: email,
+				password: password,
+			});
+
+			if (response.success) {
+				alert('¡Registro exitoso! Bienvenido a Espaiserman Trivia');
+				memoryState.currentUser = name;
+				navigateTo('/main');
+				const rn = document.getElementById('register-name');
+				const re = document.getElementById('register-email');
+				const rp = document.getElementById('register-password');
+				const rcp = document.getElementById('register-confirm-password');
+				if (rn) rn.value = '';
+				if (re) re.value = '';
+				if (rp) rp.value = '';
+				if (rcp) rcp.value = '';
+			} else {
+				alert('Error al registrarse: ' + (response.error || 'Error desconocido'));
+			}
+		} catch (error) {
+			console.error('Register error:', error);
+			alert('Error al conectar con el servidor');
+		}
+	});
 }
