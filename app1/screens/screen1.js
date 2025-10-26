@@ -1,4 +1,4 @@
-import { makeRequest, navigateTo, memoryState } from '../app.js';
+import { makeRequest, navigateTo, memoryState, updateUsername } from '../app.js';
 
 export default function renderScreen1() {
 	const app = document.getElementById('app');
@@ -163,7 +163,10 @@ export default function renderScreen1() {
 
 			if (response.success) {
 				alert('¡Inicio de sesión exitoso!');
-				memoryState.currentUser = response.user.username;
+				// Solo actualizar el nombre si no existe uno guardado previamente
+				if (!memoryState.currentUser) {
+					updateUsername(response.user.username);
+				}
 				navigateTo('/main');
 				const le = document.getElementById('login-email');
 				const lp = document.getElementById('login-password');
@@ -204,7 +207,7 @@ export default function renderScreen1() {
 
 			if (response.success) {
 				alert('¡Registro exitoso! Bienvenido a Espaiserman Trivia');
-				memoryState.currentUser = name;
+				updateUsername(name); // Persiste en localStorage
 				navigateTo('/main');
 				const rn = document.getElementById('register-name');
 				const re = document.getElementById('register-email');

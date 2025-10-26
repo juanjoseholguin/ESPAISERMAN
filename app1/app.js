@@ -12,16 +12,20 @@ import renderMapScreen from './screens/mapScreen.js';
 
 const socket = io('/', { path: '/real-time' });
 
-// Cargar monedas desde localStorage (si existen) o usar valor por defecto
+// Cargar datos del usuario desde localStorage
 const savedCoins = localStorage.getItem('espaiserman_coins');
 const initialCoins = savedCoins !== null ? parseInt(savedCoins, 10) : 1000;
+
+const savedUsername = localStorage.getItem('espaiserman_username');
+const savedAvatar = localStorage.getItem('espaiserman_avatar');
+const savedBgColor = localStorage.getItem('espaiserman_bg_color');
 
 // Estado simple en memoria para demo (rooms type Among Us)
 const memoryState = {
 	rooms: new Map(), // roomCode -> { createdAt, players: [] }
-	currentUser: null,
-	currentUserAvatar: null,
-	currentUserBgColor: null,
+	currentUser: savedUsername || null,
+	currentUserAvatar: savedAvatar || null,
+	currentUserBgColor: savedBgColor || null,
 	currentUserCoins: initialCoins, // Monedas del usuario (persisten en localStorage)
 	roomConfig: null,
 };
@@ -171,6 +175,22 @@ function subtractCoins(amount) {
 	return newTotal;
 }
 
+// Funciones para actualizar y persistir datos del perfil
+function updateUsername(username) {
+	memoryState.currentUser = username;
+	localStorage.setItem('espaiserman_username', username);
+}
+
+function updateAvatar(avatarUrl) {
+	memoryState.currentUserAvatar = avatarUrl;
+	localStorage.setItem('espaiserman_avatar', avatarUrl);
+}
+
+function updateBgColor(color) {
+	memoryState.currentUserBgColor = color;
+	localStorage.setItem('espaiserman_bg_color', color);
+}
+
 // Exponer funciones globalmente
 window.generateRoomCode = generateRoomCode;
 window.navigateTo = navigateTo;
@@ -178,6 +198,9 @@ window.socket = socket;
 window.updateCoins = updateCoins;
 window.addCoins = addCoins;
 window.subtractCoins = subtractCoins;
+window.updateUsername = updateUsername;
+window.updateAvatar = updateAvatar;
+window.updateBgColor = updateBgColor;
 
 export {
 	navigateTo,
@@ -191,4 +214,7 @@ export {
 	updateCoins,
 	addCoins,
 	subtractCoins,
+	updateUsername,
+	updateAvatar,
+	updateBgColor,
 };

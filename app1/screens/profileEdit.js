@@ -1,7 +1,7 @@
-import { navigateTo, renderCoinCounter } from '../app.js';
+import { navigateTo, renderCoinCounter, updateUsername, updateAvatar, updateBgColor } from '../app.js';
 
 export const renderProfileEdit = () => {
-	const currentUser = window.memoryState.currentUser;
+	const currentUser = window.memoryState.currentUser || 'Usuario';
 	const userAvatar = window.memoryState.currentUserAvatar || '/assets/images/Group 4.png';
 	const userBgColor = window.memoryState.currentUserBgColor || '#F9D648';
 
@@ -141,7 +141,7 @@ function readFileAsDataUrl(file, cb) {
 }
 
 function applyAvatarSrc(src) {
-	window.memoryState.currentUserAvatar = src;
+	updateAvatar(src); // Persiste en localStorage
 	const profileImg = document.querySelector('.profile-img');
 	if (profileImg) profileImg.src = src;
 }
@@ -153,7 +153,7 @@ window.handleAvatarFile = async (event) => {
 };
 
 window.selectColor = (color) => {
-	window.memoryState.currentUserBgColor = color;
+	updateBgColor(color); // Persiste en localStorage
 
 	// Actualizar el color de fondo en la pantalla
 	const profilePicture = document.querySelector('.profile-picture');
@@ -194,11 +194,10 @@ window.saveProfile = async () => {
 			updateData.password = password;
 		}
 
-		// Aquí necesitarías el ID del usuario actual
-		// Por ahora solo actualizamos el estado local
-		window.memoryState.currentUser = username;
+		// Persistir datos en localStorage
+		updateUsername(username);
 
-		alert('Perfil actualizado exitosamente');
+		alert('✅ Perfil actualizado exitosamente. Los cambios se han guardado.');
 		navigateTo('/main');
 	} catch (error) {
 		console.error('Error:', error);
