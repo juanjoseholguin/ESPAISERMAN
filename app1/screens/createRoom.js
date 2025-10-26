@@ -88,12 +88,13 @@ export default function renderCreateRoom() {
 
   async function loadCategories() {
     try {
-      console.log("📂 Cargando categorías...");
+      console.log("📂 Cargando categorías desde http://localhost:5050/categories...");
       const categories = await makeRequest("/categories", "GET");
       
       console.log("📊 Respuesta del servidor:", categories);
       
       if (!categories || !Array.isArray(categories)) {
+        console.error("❌ Respuesta inválida:", typeof categories, categories);
         throw new Error("Respuesta inválida del servidor");
       }
       
@@ -101,6 +102,7 @@ export default function renderCreateRoom() {
       categorySelect.innerHTML = '<option value="">Selecciona una categoría</option>';
       
       if (categories.length === 0) {
+        console.warn("⚠️ No hay categorías en la base de datos");
         categorySelect.innerHTML = '<option value="">No hay categorías disponibles</option>';
         alert("No hay categorías disponibles en la base de datos. Contacta al administrador.");
         return;
@@ -111,14 +113,16 @@ export default function renderCreateRoom() {
         option.value = category.id;
         option.textContent = category.name;
         categorySelect.appendChild(option);
+        console.log(`   ✓ Agregada: ${category.name} (ID: ${category.id})`);
       });
       
-      console.log("✅ Categorías cargadas:", categories.length);
+      console.log(`✅ ${categories.length} categorías cargadas exitosamente`);
     } catch (error) {
       console.error("❌ Error cargando categorías:", error);
+      console.error("   Detalles:", error.message);
       const categorySelect = document.getElementById("category");
       categorySelect.innerHTML = '<option value="">Error cargando categorías</option>';
-      alert("Error al cargar las categorías. Verifica la conexión con el servidor.");
+      alert(`Error al cargar las categorías: ${error.message}`);
     }
   }
 }

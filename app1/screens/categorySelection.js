@@ -1,4 +1,29 @@
-export const renderCategorySelection = () => {
+export const renderCategorySelection = async () => {
+  // Cargar categorías desde la API
+  let categoriesOptions = '<option value="">Selecciona una categoría</option>';
+  
+  try {
+    const response = await fetch('http://localhost:5050/categories');
+    if (response.ok) {
+      const categories = await response.json();
+      console.log('✅ Categorías cargadas:', categories);
+      
+      if (categories && categories.length > 0) {
+        categoriesOptions += categories.map(cat => 
+          `<option value="${cat.id}">${cat.name}</option>`
+        ).join('');
+      } else {
+        categoriesOptions += '<option value="">No hay categorías disponibles</option>';
+      }
+    } else {
+      console.error('❌ Error al cargar categorías:', response.status);
+      categoriesOptions += '<option value="">Error al cargar categorías</option>';
+    }
+  } catch (error) {
+    console.error('❌ Error de conexión:', error);
+    categoriesOptions += '<option value="">Error de conexión</option>';
+  }
+
   return `
     <div class="screen category-selection-screen">
       <div class="header">
@@ -26,10 +51,7 @@ export const renderCategorySelection = () => {
         
         <div class="input-group">
           <select id="category" class="form-input" required>
-            <option value="">Selecciona una categoría</option>
-            <option value="cultura-general-colombiana">Cultura General Colombiana</option>
-            <option value="deportes">Mundo Deportivo</option>
-            <option value="superheroes">Mundo del entretenimiento</option>
+            ${categoriesOptions}
           </select>
         </div>
         

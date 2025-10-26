@@ -5,7 +5,7 @@ const getAllCategories = async (req, res) => {
     console.log("📂 Obteniendo categorías desde Supabase...");
     
     const { data, error } = await supabase
-      .from('categories')
+      .from('question_category')
       .select('*')
       .order('id', { ascending: true });
 
@@ -34,7 +34,7 @@ const getCategoryById = async (req, res) => {
     console.log("📂 Obteniendo categoría por ID:", id);
     
     const { data, error } = await supabase
-      .from('categories')
+      .from('question_category')
       .select('*')
       .eq('id', id)
       .single();
@@ -84,7 +84,7 @@ const getCategoriesWithQuestionCount = async (req, res) => {
     console.log("📂 Obteniendo categorías con conteo de preguntas...");
     
     const { data: categories, error: categoriesError } = await supabase
-      .from('categories')
+      .from('question_category')
       .select('*')
       .order('id', { ascending: true });
 

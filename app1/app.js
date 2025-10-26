@@ -105,17 +105,33 @@ function joinRoom(code, playerName) {
 
 async function makeRequest(url, method, body) {
   const BASE_URL = "http://localhost:5050";
-  let response = await fetch(`${BASE_URL}${url}`, {
-    method: method,
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
+  try {
+    let response = await fetch(`${BASE_URL}${url}`, {
+      method: method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
 
-  response = await response.json();
+    // Verificar si la respuesta es exitosa
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+      console.error(`❌ Error HTTP ${response.status}:`, errorData);
+      throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+    }
 
-  return response;
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("❌ Error en makeRequest:", error);
+    throw error;
+  }
 }
 
-export { navigateTo, socket, makeRequest, createRoom, joinRoom, memoryState };
+// Exponer generateRoomCode globalmente
+window.generateRoomCode = generateRoomCode;
+window.navigateTo = navigateTo;
+window.socket = socket;
+
+export { navigateTo, socket, makeRequest, createRoom, joinRoom, memoryState, generateRoomCode };
