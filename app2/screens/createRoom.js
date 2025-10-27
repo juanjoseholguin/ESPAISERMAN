@@ -33,9 +33,10 @@ export default async function renderCreateRoom() {
             </select>
           </div>
           <div class="input-group">
-            <input type="number" id="participants" placeholder="Escribe el número de participantes" class="form-input" min="2" max="20">
+            <input type="number" id="participants" placeholder="Escribe el número de participantes" class="form-input" min="2" max="10">
           </div>
           <div class="input-group">
+          <h4>Tiempo por pregunta</h4>
             <input type="number" id="timePerQuestion" placeholder="Tiempo por pregunta" class="form-input" min="10" max="60" value="30">
           </div>
           <button id="btn-go-lobby" class="btn-primary" style="background:#11A36B; border-color:#0C6E4A;">Organizar preguntas</button>
