@@ -1,8 +1,11 @@
-const { createClient } = require('@supabase/supabase-js');
+const supabase = require("../services/supabase.service");
 
+<<<<<<< HEAD
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_API_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
+=======
+>>>>>>> b161954edb52ea950287b8308147990cac2a939a
 
 const getQuestionById = async (req, res) => {
   try {
@@ -93,3 +96,5 @@ module.exports = {
   getAllQuestions,
   getQuestionsByCategory
 };
+
+
