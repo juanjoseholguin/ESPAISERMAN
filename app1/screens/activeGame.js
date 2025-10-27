@@ -3,6 +3,7 @@ import { navigateTo } from '../app.js';
 export default function renderActiveGame({ roomCode } = {}) {
 	const app = document.getElementById('app');
 	const currentQuestion = window.currentQuestionIndex || 1;
+	const timePerQuestion = window.roomTimePerQuestion || 30;
 
 	const socket = window.socket;
 	let questions = window.roomQuestions || [];
@@ -68,7 +69,11 @@ export default function renderActiveGame({ roomCode } = {}) {
       </div>
 
       <div style="background:rgba(255,255,255,0.95); border-radius:16px; padding:20px; margin:0 16px;">
-        <div style="background:#1e3a8a; border-radius:12px; padding:4px 12px; margin-bottom:12px; text-align:center; color:white; font-weight:bold;">10s</div>
+        <div style="background:#e5e7eb; border-radius:12px; overflow:hidden; margin-bottom:12px; height:32px; position:relative;">
+          <div id="timer-bar" style="background:linear-gradient(90deg, #11A36B 0%, #FFB347 50%, #E34C43 100%); height:100%; width:100%; transition:width 0.1s linear; display:flex; align-items:center; justify-content:center;">
+            <span id="timer-text" style="color:white; font-weight:bold; font-size:16px; position:relative; z-index:1;">${timePerQuestion}s</span>
+          </div>
+        </div>
         <h2 style="text-align:center; color:#1e3a8a; font-size:20px; margin-bottom:16px;">${question.q}</h2>
 
         <div style="display:flex; flex-direction:column; gap:10px;">
@@ -92,11 +97,46 @@ export default function renderActiveGame({ roomCode } = {}) {
 
 	setTimeout(() => {
 		let answered = false;
+		let timeLeft = timePerQuestion;
+		const timerBar = document.getElementById('timer-bar');
+		const timerText = document.getElementById('timer-text');
+
+		const timerInterval = setInterval(() => {
+			if (answered) {
+				clearInterval(timerInterval);
+				return;
+			}
+
+			timeLeft--;
+			timerText.textContent = `${timeLeft}s`;
+			const percentage = (timeLeft / timePerQuestion) * 100;
+			timerBar.style.width = `${percentage}%`;
+
+			if (timeLeft <= 0) {
+				clearInterval(timerInterval);
+				answered = true;
+				document.querySelectorAll('.answer-btn').forEach((btn) => {
+					btn.disabled = true;
+					btn.style.opacity = '0.5';
+				});
+
+				setTimeout(() => {
+					if (currentQuestion < formattedQuestions.length) {
+						window.currentQuestionIndex = currentQuestion + 1;
+						navigateTo('/active', { roomCode });
+					} else {
+						window.currentQuestionIndex = 1;
+						navigateTo('/results', { roomCode });
+					}
+				}, 1000);
+			}
+		}, 1000);
 
 		document.querySelectorAll('.answer-btn').forEach((btn) => {
 			btn.addEventListener('click', (e) => {
 				if (answered) return;
 				answered = true;
+				clearInterval(timerInterval);
 
 				const answer = e.target.closest('.answer-btn').dataset.answer;
 				const correct = answer === question.correct;

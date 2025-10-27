@@ -60,6 +60,7 @@ export default function renderLobby({ code } = {}) {
 	socket.on('room:started', async (data) => {
 		console.log('Game started, navigating to active game');
 		console.log('Question IDs:', data.questionIds);
+		console.log('Time per question:', data.timePerQuestion);
 
 		try {
 			const questionPromises = data.questionIds.map((id) =>
@@ -68,6 +69,7 @@ export default function renderLobby({ code } = {}) {
 
 			const questions = await Promise.all(questionPromises);
 			window.roomQuestions = questions;
+			window.roomTimePerQuestion = data.timePerQuestion || 30;
 			console.log('Questions loaded:', questions);
 
 			navigateTo('/active', { roomCode: code });

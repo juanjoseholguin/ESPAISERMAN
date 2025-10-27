@@ -87,7 +87,7 @@ const initSocketInstance = (httpServer) => {
 			if (!room) return;
 			if (room.hostId !== socket.id) return;
 			const questionIds = room.questions?.map((q) => q.id) || [];
-			io.to(code).emit('room:started', { code, questionIds });
+			io.to(code).emit('room:started', { code, questionIds, timePerQuestion: room.timePerQuestion });
 		});
 
 		socket.on('room:state-request', ({ code }) => {
