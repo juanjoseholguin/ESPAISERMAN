@@ -15,6 +15,10 @@ body {
     width: 100vw;
     position: relative;
 }
+
+.status-bar {
+    display: none;
+}
  
 .screen {
     position: fixed;

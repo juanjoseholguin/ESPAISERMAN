@@ -1,10 +1,10 @@
-import { navigateTo } from "../app.js";
+import { navigateTo, updateCoins } from "../app.js";
 
 export default function renderShop() {
+  const coins = window.memoryState.currentUserCoins || 1000;
   const app = document.getElementById("app");
   app.innerHTML = `
     <div class="screen active">
-      <div class="status-bar"><div class="time">9:41</div><div class="status-icons"><div class="signal"></div><div class="wifi"></div><div class="battery"></div></div></div>
       <button class="back-button" id="back-shop"><div class="back-arrow"></div></button>
       <div class="main-content" style="gap:16px;">
         <div class="group4-container" style="margin-top:12px; text-align:center;">
@@ -12,6 +12,10 @@ export default function renderShop() {
         </div>
         <h1 class="form-title">Tienda</h1>
         <p style="text-align:center; opacity:.8; margin-top:-8px;">Con estos potenciadores vas a llegar más alto que Jaime</p>
+        <div style="display:flex; justify-content:center; align-items:center; gap:8px; background:#FFE28A; padding:8px 16px; border-radius:16px; margin:0 auto 16px;">
+          <img src="/assets/images/Group 19453.png" alt="coin" style="width:24px; height:24px;">
+          <span style="font-weight:800; color:#1e3a8a;">${coins}</span>
+        </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
           <button class="shop-card" data-item="empanada" style="background:rgba(255,255,255,0.85); border-radius:20px; padding:12px; text-align:center; border:none;">
             <img src="/assets/images/empanada.png" alt="Empanadirri" style="width:100%; max-width:96px; margin:0 auto; display:block;">
@@ -45,11 +49,11 @@ export default function renderShop() {
       <div style="background:rgba(255,226,138,0.95); border-radius:16px; padding:12px; margin:12px 0;">
         <img id="m-img" src="" alt="item" style="width:110px; display:block; margin:0 auto;">
       </div>
-      <div style="font-weight:800; margin:4px 0 2px 0;">“<span id=\"m-phrase\">Frase</span>”</div>
+      <div style="font-weight:800; margin:4px 0 2px 0;">"<span id=\"m-phrase\">Frase</span>"</div>
       <div id="m-desc" style="opacity:.9; margin-bottom:16px;">Descripción</div>
       <div style="display:flex; gap:12px; justify-content:center;">
         <button id="m-back" class="btn-primary" style="max-width:140px; background:#1E3A8A; border-color:#0E1A34;">←</button>
-        <button id="m-buy" class="btn-primary" style="max-width:180px; background:#11A36B; border-color:#0C6E4A;">Comprar 🪙200</button>
+        <button id="m-buy" class="btn-primary" style="max-width:180px; background:#11A36B; border-color:#0C6E4A;">Comprar <img src="/assets/images/Group 19453.png" style="width:16px; height:16px; vertical-align:middle;">200</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
@@ -74,6 +78,18 @@ export default function renderShop() {
     btn.addEventListener('click', () => openModal(btn.getAttribute('data-item')));
   });
   modal.querySelector('#m-back').addEventListener('click', () => { modal.style.display = 'none'; });
+  
+  modal.querySelector('#m-buy').addEventListener('click', () => {
+    const coins = window.memoryState.currentUserCoins || 0;
+    if (coins >= 200) {
+      updateCoins(200, 'subtract');
+      modal.style.display = 'none';
+      alert('¡Compra exitosa!');
+      renderShop();
+    } else {
+      alert('No tienes suficientes monedas');
+    }
+  });
 }
 
 

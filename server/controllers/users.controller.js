@@ -73,35 +73,9 @@ const deleteUser = async (req, res) => {
   }
 };
 
-const updatePassword = async (req, res) => {
-  try {
-    const { email, newPassword, confirmPassword } = req.body;
-    
-    if (!email || !newPassword || !confirmPassword) {
-      return res.status(400).json({ error: "Email, new password and confirm password are required" });
-    }
-    
-    if (newPassword !== confirmPassword) {
-      return res.status(400).json({ error: "Passwords do not match" });
-    }
-    
-    const result = await updateUserByEmail({ password: newPassword }, email);
-    
-    if (result.error) {
-      return res.status(400).json({ error: result.error });
-    }
-    
-    res.json({ message: "Password updated successfully", data: result });
-  } catch (error) {
-    console.error("Error in updatePassword controller:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-};
-
 module.exports = {
   getUsers,
   createUser,
   updateUser,
   deleteUser,
-  updatePassword,
 };

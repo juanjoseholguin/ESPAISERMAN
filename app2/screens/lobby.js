@@ -1,7 +1,9 @@
-import { navigateTo } from "../app.js";
+import { navigateTo, generateRoomCode, memoryState } from "../app.js";
 
-export default function renderLobby({ code } = {}) {
+export default function renderLobby({ code, category, participants, timePerQuestion } = {}) {
   const app = document.getElementById("app");
+  const roomCode = code || generateRoomCode();
+  
   app.innerHTML = `
     <div class="screen active">
       <button class="back-button" id="back-lobby"><div class="back-arrow"></div></button>
@@ -11,18 +13,20 @@ export default function renderLobby({ code } = {}) {
         </div>
         <h1 class="form-title">Los que están en el parche</h1>
         <div class="form-container" style="text-align:center;">
-          <div id="lobby-code" style="margin:8px auto 16px; display:inline-block; padding:8px 16px; background:#FFE28A; border-radius:12px; font-weight:800;">${code || "SAM 000"}</div>
+          <div style="background:rgba(255,226,138,0.95); border-radius:16px; padding:12px 20px; margin:0 auto 16px; display:inline-block;">
+            <div style="color:#666; font-size:14px; margin-bottom:4px;">Código de sala</div>
+            <div id="lobby-code" style="font-weight:800; color:#1e3a8a; font-size:24px; letter-spacing:4px;">${roomCode}</div>
+          </div>
           <div style="background:rgba(255,255,255,0.95); border-radius:20px; padding:16px; min-height:200px;">
             <ol id="players-list" style="text-align:left; line-height:32px; margin:0; list-style-position: inside;"></ol>
           </div>
-          <p style="color:#666; margin-top:16px; font-size:14px;">Esperando a que el moderador inicie la partida...</p>
+          <button id="btn-start" class="btn-primary" style="margin-top:16px; background:#11A36B; border-color:#0C6E4A; display:block; margin-left:auto; margin-right:auto; max-width:320px;">Empezar partida</button>
         </div>
       </div>
     </div>
   `;
 
   const socket = window.socket || window.io("/", { path: "/real-time" });
-  let hasJoined = false;
 
   function renderPlayers(state) {
     const list = document.getElementById("players-list");
@@ -33,15 +37,13 @@ export default function renderLobby({ code } = {}) {
       return;
     }
     
-    const uniquePlayers = [...new Map(state.players.map(p => [p.id || p.name, p])).values()];
-    
     list.innerHTML = "";
-    uniquePlayers.forEach((p, idx) => {
+    state.players.forEach((p, idx) => {
       const li = document.createElement("li");
       li.style.padding = "8px 0";
-      li.style.borderBottom = idx < uniquePlayers.length - 1 ? "1px solid rgba(0,0,0,0.1)" : "none";
+      li.style.borderBottom = idx < state.players.length - 1 ? "1px solid rgba(0,0,0,0.1)" : "none";
       li.style.fontSize = "16px";
-      li.innerHTML = `<strong>${idx + 1}.</strong> ${p.name || "Jugador"}`;
+      li.innerHTML = `<strong>${idx + 1}.</strong> ${p.name}`;
       list.appendChild(li);
     });
     const codeEl = document.getElementById("lobby-code");
@@ -49,38 +51,27 @@ export default function renderLobby({ code } = {}) {
   }
 
   socket.off("room:state");
-  socket.off("room:started");
-  socket.off("room:error");
-  socket.off("room:joined");
-  
   socket.on("room:state", renderPlayers);
   
-  socket.on("room:started", (data) => {
-    console.log("Game started, navigating to active game");
-    console.log("Question IDs:", data.questionIds);
-    // window.roomQuestions ya debe estar lleno desde el lobby
-    navigateTo("/active", { roomCode: code });
-  });
-  
-  socket.on("room:error", (error) => {
-    console.error("Room error:", error);
-    alert(error.message || "Error al unirse a la sala");
-  });
-  
   setTimeout(() => {
-    const backBtn = document.getElementById("back-lobby");
-    if (backBtn) {
-      backBtn.addEventListener("click", () => { navigateTo("/main"); });
-    }
+    document.getElementById("back-lobby").addEventListener("click", () => { navigateTo("/create"); });
     
-    if (code && !hasJoined) {
-      hasJoined = true;
-      console.log("Joining room with code:", code);
+    document.getElementById("btn-start").addEventListener("click", () => {
+      console.log('Starting game with code:', roomCode);
+      socket.emit("room:start", { code: roomCode });
+      setTimeout(() => {
+        navigateTo("/active", { roomCode });
+      }, 100);
+    });
+    
+    if (code) {
+      console.log("Moderator joining room with code:", code);
       socket.emit("room:join", { 
         code, 
-        playerName: window.memoryState.currentUser || "Jugador",
+        playerName: window.memoryState.currentUser || "Moderador",
         avatar_url: window.memoryState.currentUserAvatar,
-        avatar_bg: window.memoryState.currentUserBgColor
+        avatar_bg: window.memoryState.currentUserBgColor,
+        isModerator: true
       });
     }
   }, 100);

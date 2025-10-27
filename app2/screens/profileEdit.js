@@ -56,7 +56,6 @@ export const renderProfileEdit = () => {
   `;
 };
 
-// Modal selector de avatar (predefinidos + subir + drag&drop)
 window.openAvatarPicker = () => {
   const modal = document.createElement('div');
   modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; z-index:1000; backdrop-filter:blur(2px)';
@@ -70,11 +69,7 @@ window.openAvatarPicker = () => {
         <button class="preset-avatar" data-src="/assets/images/spiderman america.png" style="border:none; background:#F3F4F6; border-radius:12px; padding:8px;">
           <img src="/assets/images/spiderman america.png" style="width:100%; height:80px; object-fit:contain;">
         </button>
-        <button class="preset-avatar" data-src="/assets/images/Captura de Pantalla 2025-09-07 a la(s) 8.49.54 p.m. 1.png" style="border:none; background:#F3F4F6; border-radius:12px; padding:8px;">
-          <img src="/assets/images/Captura de Pantalla 2025-09-07 a la(s) 8.49.54 p.m. 1.png" style="width:100%; height:80px; object-fit:contain;">
-        </button>
       </div>
-      <div id="dropzone" style="margin-top:12px; border:2px dashed #9CA3AF; border-radius:12px; padding:12px; text-align:center; color:#6B7280;">Arrastra una imagen aquí o <button id="pick-file" class="register-link" style="background:none; border:none; color:#1E3A8A; text-decoration:underline;">explora tu equipo</button></div>
       <div style="display:flex; justify-content:center; gap:12px; margin-top:12px;">
         <button id="close-avatar" class="btn-primary" style="max-width:160px; background:#1E3A8A; border-color:#0E1A34;">Cerrar</button>
       </div>
@@ -88,26 +83,8 @@ window.openAvatarPicker = () => {
       modal.remove();
     });
   });
-  modal.querySelector('#pick-file').addEventListener('click', () => {
-    document.getElementById('avatarInput').click();
-  });
   modal.querySelector('#close-avatar').addEventListener('click', () => modal.remove());
-
-  // drag & drop
-  const drop = modal.querySelector('#dropzone');
-  ;['dragenter','dragover'].forEach(evt => drop.addEventListener(evt, e => { e.preventDefault(); drop.style.background = '#EEF2FF'; }));
-  ;['dragleave','drop'].forEach(evt => drop.addEventListener(evt, e => { e.preventDefault(); drop.style.background = ''; }));
-  drop.addEventListener('drop', (e) => {
-    const file = e.dataTransfer.files?.[0];
-    if (file) readFileAsDataUrl(file, (dataUrl) => { applyAvatarSrc(dataUrl); modal.remove(); });
-  });
 };
-
-function readFileAsDataUrl(file, cb) {
-  const reader = new FileReader();
-  reader.onload = (e) => cb(e.target.result);
-  reader.readAsDataURL(file);
-}
 
 function applyAvatarSrc(src) {
   window.memoryState.currentUserAvatar = src;
@@ -115,28 +92,17 @@ function applyAvatarSrc(src) {
   if (profileImg) profileImg.src = src;
 }
 
-window.handleAvatarFile = async (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-  readFileAsDataUrl(file, (dataUrl) => applyAvatarSrc(dataUrl));
-};
-
 window.selectColor = (color) => {
   window.memoryState.currentUserBgColor = color;
-  
-  // Actualizar el color de fondo en la pantalla
   const profilePicture = document.querySelector('.profile-picture');
   if (profilePicture) {
     profilePicture.style.backgroundColor = color;
   }
-  
-  // Remover selección anterior y agregar nueva
   document.querySelectorAll('.color-option').forEach(option => {
     option.classList.remove('selected');
   });
   document.querySelector(`[data-color="${color}"]`).classList.add('selected');
 };
-
 
 window.saveProfile = async () => {
   const username = document.getElementById('username').value;
@@ -152,7 +118,7 @@ window.saveProfile = async () => {
     localStorage.setItem('currentUserAvatar', window.memoryState.currentUserAvatar);
     localStorage.setItem('currentUserBgColor', window.memoryState.currentUserBgColor);
     alert('Perfil actualizado exitosamente');
-    navigateTo('/main');
+    navigateTo('/create');
   } catch (error) {
     console.error('Error:', error);
     alert('Error al actualizar el perfil');
@@ -166,11 +132,11 @@ window.logout = () => {
     localStorage.removeItem('currentUserAvatar');
     localStorage.removeItem('currentUserBgColor');
     window.memoryState.currentUser = null;
-    window.memoryState.currentUserCoins = 1000;
     window.location.reload();
   }
 };
 
 window.goBackFromProfile = () => {
-  navigateTo('/main');
+  navigateTo('/create');
 };
+

@@ -4,15 +4,6 @@ export default function renderScreen1() {
   const app = document.getElementById("app");
   app.innerHTML = `
       <div id="splash-screen" class="screen active">
-        <div class="status-bar">
-            <div class="time">9:41</div>
-            <div class="status-icons">
-                <div class="signal"></div>
-                <div class="wifi"></div>
-                <div class="battery"></div>
-            </div>
-        </div>
-
         <div class="main-content" style="justify-content: space-between;">
             <div class="logo-section">
                 <div class="group4-container">
@@ -29,15 +20,6 @@ export default function renderScreen1() {
       </div>
 
       <div id="login-screen" class="screen">
-        <div class="status-bar">
-            <div class="time">9:41</div>
-            <div class="status-icons">
-                <div class="signal"></div>
-                <div class="wifi"></div>
-                <div class="battery"></div>
-            </div>
-        </div>
-
         <button class="back-button" id="back-from-login">
             <div class="back-arrow"></div>
         </button>
@@ -58,29 +40,18 @@ export default function renderScreen1() {
                     <div class="input-group">
                         <input type="password" id="login-password" placeholder="Contraseña" class="form-input">
                     </div>
-                    <div class="forgot-password">
-                        <a href="#" class="forgot-link">Olvidaste tu contraseña?</a>
-                    </div>
                     <button id="login-btn" class="btn-primary">Iniciar Sesión</button>
                 </div>
             </div>
 
             <div class="register-link-section">
-                <p class="register-text">No tienes cuenta? Hágase una</p>
-                <button id="go-to-register" class="register-link">Registrarse</button>
+                <p class="register-text">¿No tienes cuenta? ¡Hágase una, que es gratis!</p>
+                <button id="go-to-register" class="register-link" style="background:none; border:none; color:#1E3A8A; text-decoration:underline; cursor:pointer; font-size:14px;">Registrarse</button>
             </div>
         </div>
       </div>
 
       <div id="register-screen" class="screen">
-        <div class="status-bar">
-            <div class="time">9:41</div>
-            <div class="status-icons">
-                <div class="signal"></div>
-                <div class="wifi"></div>
-                <div class="battery"></div>
-            </div>
-        </div>
         <button class="back-button" id="back-from-register">
             <div class="back-arrow"></div>
         </button>
@@ -109,8 +80,8 @@ export default function renderScreen1() {
                 </div>
             </div>
             <div class="register-link-section">
-                <p class="register-text">¿Ya tienes cuenta?</p>
-                <button id="go-to-login" class="register-link">Inicia Sesión</button>
+                <p class="register-text">¿Ya tienes cuenta? ¡Póngale entonces!</p>
+                <button id="go-to-login" class="register-link" style="background:none; border:none; color:#1E3A8A; text-decoration:underline; cursor:pointer; font-size:14px;">Inicia Sesión</button>
             </div>
         </div>
       </div>
@@ -142,13 +113,6 @@ export default function renderScreen1() {
     loginScreen.classList.remove("active");
     registerScreen.classList.add("active");
   });
-  const forgot = loginScreen.querySelector('.forgot-link');
-  if (forgot) {
-    forgot.addEventListener('click', (e) => {
-      e.preventDefault();
-      navigateTo('/forgot');
-    });
-  }
   document.getElementById("go-to-login").addEventListener("click", () => {
     const btn = document.getElementById("go-to-login");
     btn.classList.add("btn-pressed");
@@ -175,19 +139,17 @@ export default function renderScreen1() {
     const username = document.getElementById("login-username").value;
     const password = document.getElementById("login-password").value;
     if (!username || !password) { alert("Por favor completa todos los campos"); return; }
-    const email = username.includes("@") ? username : `${username}@example.com`;
     try {
-      const response = await makeRequest("/users", "POST", { username, email });
-      if (response?.success) {
-        memoryState.currentUser = username;
-        navigateTo("/main");
-        const lu = document.getElementById("login-username");
-        const lp = document.getElementById("login-password");
-        if (lu) lu.value = "";
-        if (lp) lp.value = "";
-      } else {
-        alert("Credenciales inválidas: " + (response?.error || ""));
-      }
+      const savedCoins = localStorage.getItem(`coins_${username}`) || '1000';
+      memoryState.currentUser = username;
+      memoryState.currentUserCoins = parseInt(savedCoins);
+      localStorage.setItem('currentUser', username);
+      localStorage.setItem('currentUserCoins', savedCoins);
+      navigateTo("/main");
+      const lu = document.getElementById("login-username");
+      const lp = document.getElementById("login-password");
+      if (lu) lu.value = "";
+      if (lp) lp.value = "";
     } catch (error) {
       alert("Error al conectar con el servidor");
     }
@@ -210,21 +172,20 @@ export default function renderScreen1() {
     }
     
     try {
-      const response = await makeRequest("/users", "POST", { name, email });
-      if (response?.success) {
-        memoryState.currentUser = name || email;
-        navigateTo("/main");
-        const rn = document.getElementById("register-name");
-        const re = document.getElementById("register-email");
-        const rp = document.getElementById("register-password");
-        const rcp = document.getElementById("register-confirm-password");
-        if (rn) rn.value = "";
-        if (re) re.value = "";
-        if (rp) rp.value = "";
-        if (rcp) rcp.value = "";
-      } else {
-        alert("No se pudo registrar: " + (response?.error || ""));
-      }
+      memoryState.currentUser = name;
+      memoryState.currentUserCoins = 1000;
+      localStorage.setItem('currentUser', name);
+      localStorage.setItem(`coins_${name}`, '1000');
+      localStorage.setItem('currentUserCoins', '1000');
+      navigateTo("/main");
+      const rn = document.getElementById("register-name");
+      const re = document.getElementById("register-email");
+      const rp = document.getElementById("register-password");
+      const rcp = document.getElementById("register-confirm-password");
+      if (rn) rn.value = "";
+      if (re) re.value = "";
+      if (rp) rp.value = "";
+      if (rcp) rcp.value = "";
     } catch (error) {
       alert("Error al conectar con el servidor");
     }
