@@ -31,7 +31,7 @@ export default async function renderCreateRoom() {
             </select>
           </div>
           <div class="input-group">
-            <input type="number" id="participants" placeholder="Escribe el número de participantes" class="form-input" min="2" max="20">
+            <input type="number" id="participants" placeholder="Escribe el número de participantes" class="form-input" min="2" max="10">
           </div>
           <div class="input-group">
             <select id="timePerQuestion" class="form-input">
