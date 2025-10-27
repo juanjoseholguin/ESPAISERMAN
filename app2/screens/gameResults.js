@@ -1,9 +1,9 @@
-import { navigateTo } from "../app.js";
+import { navigateTo } from '../app.js';
 
 export default function renderGameResults({ results = [] }) {
-  const app = document.getElementById("app");
-  
-  app.innerHTML = `
+	const app = document.getElementById('app');
+
+	app.innerHTML = `
     <div class="screen active">
       <div class="main-content" style="gap:16px;">
         <div class="group4-container" style="margin-top:12px; text-align:center;">
@@ -21,30 +21,28 @@ export default function renderGameResults({ results = [] }) {
     </div>
   `;
 
-  const mockResults = results.length > 0 ? results : [
-    { name: window.memoryState?.currentUser || "Usuario", score: 0, highlight: true }
-  ];
+	const mockResults =
+		results.length > 0 ? results : [{ name: window.memoryState?.currentUser || 'Usuario', score: 0, highlight: true }];
 
-  const sorted = mockResults.sort((a, b) => b.score - a.score);
-  const list = document.getElementById("results-list");
-  
-  sorted.forEach((player, idx) => {
-    const li = document.createElement("li");
-    li.style.padding = "8px 0";
-    li.style.borderBottom = idx < sorted.length - 1 ? "1px solid rgba(0,0,0,0.1)" : "none";
-    if (idx === 0) {
-      li.style.color = "#E34C43";
-      li.style.fontSize = "18px";
-    }
-    li.innerHTML = `<strong>${idx + 1}.</strong> ${player.name} - ${player.score.toLocaleString('es-CO')} pts`;
-    list.appendChild(li);
-  });
+	const sorted = mockResults.sort((a, b) => b.score - a.score);
+	const list = document.getElementById('results-list');
 
-  setTimeout(() => {
-    document.getElementById("btn-finish").addEventListener("click", () => {
-      alert("¡Gracias por jugar! La partida ha finalizado.");
-      navigateTo("/create");
-    });
-  }, 100);
+	sorted.forEach((player, idx) => {
+		const li = document.createElement('li');
+		li.style.padding = '8px 0';
+		li.style.borderBottom = idx < sorted.length - 1 ? '1px solid rgba(0,0,0,0.1)' : 'none';
+		if (idx === 0) {
+			li.style.color = '#E34C43';
+			li.style.fontSize = '18px';
+		}
+		li.innerHTML = `${player.name} - ${player.score.toLocaleString('es-CO')} pts`;
+		list.appendChild(li);
+	});
+
+	setTimeout(() => {
+		document.getElementById('btn-finish').addEventListener('click', () => {
+			alert('¡Gracias por jugar! La partida ha finalizado.');
+			navigateTo('/create');
+		});
+	}, 100);
 }
-

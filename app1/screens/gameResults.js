@@ -1,9 +1,9 @@
-import { navigateTo } from "../app.js";
+import { navigateTo } from '../app.js';
 
 export default function renderGameResults({ roomCode } = {}) {
-  const app = document.getElementById("app");
-  
-  app.innerHTML = `
+	const app = document.getElementById('app');
+
+	app.innerHTML = `
     <div class="screen active">
       <div class="main-content" style="gap:16px; justify-content:center;">
         <div class="group4-container" style="text-align:center;">
@@ -19,48 +19,47 @@ export default function renderGameResults({ roomCode } = {}) {
     </div>
   `;
 
-  const socket = window.socket;
-  let results = [];
-  
-  socket.on("room:final-results", (finalResults) => {
-    results = finalResults;
-    renderResults(results);
-  });
-  
-  socket.emit("request-final-results", { roomCode });
+	const socket = window.socket;
+	let results = [];
 
-  function renderResults(playerResults = []) {
-    const list = document.getElementById("results-list");
-    if (!list) return;
-    
-    if (playerResults.length === 0) {
-      list.innerHTML = "<li style='text-align:center; color:#666;'>Esperando resultados...</li>";
-      return;
-    }
-    
-    const sorted = [...playerResults].sort((a, b) => b.score - a.score);
-    list.innerHTML = "";
-    
-    sorted.forEach((player, idx) => {
-      const li = document.createElement("li");
-      li.style.padding = "8px 0";
-      li.style.borderBottom = idx < sorted.length - 1 ? "1px solid rgba(0,0,0,0.1)" : "none";
-      if (idx === 0) {
-        li.style.color = "#E34C43";
-        li.style.fontSize = "18px";
-      }
-      li.innerHTML = `${idx + 1}. ${player.name} - ${player.score} pts`;
-      list.appendChild(li);
-    });
-  }
-  
-  setTimeout(() => {
-    renderResults(results);
-    
-    document.getElementById("btn-back").addEventListener("click", () => {
-      window.currentQuestionIndex = 1;
-      navigateTo("/main");
-    });
-  }, 100);
+	socket.on('room:final-results', (finalResults) => {
+		results = finalResults;
+		renderResults(results);
+	});
+
+	socket.emit('request-final-results', { roomCode });
+
+	function renderResults(playerResults = []) {
+		const list = document.getElementById('results-list');
+		if (!list) return;
+
+		if (playerResults.length === 0) {
+			list.innerHTML = "<li style='text-align:center; color:#666;'>Esperando resultados...</li>";
+			return;
+		}
+
+		const sorted = [...playerResults].sort((a, b) => b.score - a.score);
+		list.innerHTML = '';
+
+		sorted.forEach((player, idx) => {
+			const li = document.createElement('li');
+			li.style.padding = '8px 0';
+			li.style.borderBottom = idx < sorted.length - 1 ? '1px solid rgba(0,0,0,0.1)' : 'none';
+			if (idx === 0) {
+				li.style.color = '#E34C43';
+				li.style.fontSize = '18px';
+			}
+			li.innerHTML = `${player.name} - ${player.score} pts`;
+			list.appendChild(li);
+		});
+	}
+
+	setTimeout(() => {
+		renderResults(results);
+
+		document.getElementById('btn-back').addEventListener('click', () => {
+			window.currentQuestionIndex = 1;
+			navigateTo('/main');
+		});
+	}, 100);
 }
-

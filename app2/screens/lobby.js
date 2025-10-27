@@ -1,10 +1,10 @@
-import { navigateTo, generateRoomCode, memoryState } from "../app.js";
+import { navigateTo, generateRoomCode, memoryState } from '../app.js';
 
 export default function renderLobby({ code, category, participants, timePerQuestion } = {}) {
-  const app = document.getElementById("app");
-  const roomCode = code || generateRoomCode();
-  
-  app.innerHTML = `
+	const app = document.getElementById('app');
+	const roomCode = code || generateRoomCode();
+
+	app.innerHTML = `
     <div class="screen active">
       <button class="back-button" id="back-lobby"><div class="back-arrow"></div></button>
       <div class="main-content" style="gap:16px;">
@@ -26,53 +26,55 @@ export default function renderLobby({ code, category, participants, timePerQuest
     </div>
   `;
 
-  const socket = window.socket || window.io("/", { path: "/real-time" });
+	const socket = window.socket || window.io('/', { path: '/real-time' });
 
-  function renderPlayers(state) {
-    const list = document.getElementById("players-list");
-    if (!list) return;
-    
-    if (!state.players || state.players.length === 0) {
-      list.innerHTML = "<li style='text-align:center; color:#666;'>Esperando jugadores...</li>";
-      return;
-    }
-    
-    list.innerHTML = "";
-    state.players.forEach((p, idx) => {
-      const li = document.createElement("li");
-      li.style.padding = "8px 0";
-      li.style.borderBottom = idx < state.players.length - 1 ? "1px solid rgba(0,0,0,0.1)" : "none";
-      li.style.fontSize = "16px";
-      li.innerHTML = `<strong>${idx + 1}.</strong> ${p.name}`;
-      list.appendChild(li);
-    });
-    const codeEl = document.getElementById("lobby-code");
-    if (codeEl && state.code) codeEl.textContent = state.code;
-  }
+	function renderPlayers(state) {
+		const list = document.getElementById('players-list');
+		if (!list) return;
 
-  socket.off("room:state");
-  socket.on("room:state", renderPlayers);
-  
-  setTimeout(() => {
-    document.getElementById("back-lobby").addEventListener("click", () => { navigateTo("/create"); });
-    
-    document.getElementById("btn-start").addEventListener("click", () => {
-      console.log('Starting game with code:', roomCode);
-      socket.emit("room:start", { code: roomCode });
-      setTimeout(() => {
-        navigateTo("/active", { roomCode });
-      }, 100);
-    });
-    
-    if (code) {
-      console.log("Moderator joining room with code:", code);
-      socket.emit("room:join", { 
-        code, 
-        playerName: window.memoryState.currentUser || "Moderador",
-        avatar_url: window.memoryState.currentUserAvatar,
-        avatar_bg: window.memoryState.currentUserBgColor,
-        isModerator: true
-      });
-    }
-  }, 100);
+		if (!state.players || state.players.length === 0) {
+			list.innerHTML = "<li style='text-align:center; color:#666;'>Esperando jugadores...</li>";
+			return;
+		}
+
+		list.innerHTML = '';
+		state.players.forEach((p, idx) => {
+			const li = document.createElement('li');
+			li.style.padding = '8px 0';
+			li.style.borderBottom = idx < state.players.length - 1 ? '1px solid rgba(0,0,0,0.1)' : 'none';
+			li.style.fontSize = '16px';
+			li.innerHTML = `${p.name}`;
+			list.appendChild(li);
+		});
+		const codeEl = document.getElementById('lobby-code');
+		if (codeEl && state.code) codeEl.textContent = state.code;
+	}
+
+	socket.off('room:state');
+	socket.on('room:state', renderPlayers);
+
+	setTimeout(() => {
+		document.getElementById('back-lobby').addEventListener('click', () => {
+			navigateTo('/create');
+		});
+
+		document.getElementById('btn-start').addEventListener('click', () => {
+			console.log('Starting game with code:', roomCode);
+			socket.emit('room:start', { code: roomCode });
+			setTimeout(() => {
+				navigateTo('/active', { roomCode });
+			}, 100);
+		});
+
+		if (code) {
+			console.log('Moderator joining room with code:', code);
+			socket.emit('room:join', {
+				code,
+				playerName: window.memoryState.currentUser || 'Moderador',
+				avatar_url: window.memoryState.currentUserAvatar,
+				avatar_bg: window.memoryState.currentUserBgColor,
+				isModerator: true,
+			});
+		}
+	}, 100);
 }

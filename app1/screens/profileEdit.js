@@ -1,12 +1,13 @@
-import { navigateTo } from "../app.js";
+import { navigateTo } from '../app.js';
 
 export const renderProfileEdit = () => {
-  const currentUser = window.memoryState.currentUser || localStorage.getItem('currentUser') || 'Usuario';
-  const userAvatar = window.memoryState.currentUserAvatar || localStorage.getItem('currentUserAvatar') || '/assets/images/Group 4.png';
-  const userBgColor = window.memoryState.currentUserBgColor || localStorage.getItem('currentUserBgColor') || '#F9D648';
+	const currentUser = window.memoryState.currentUser || localStorage.getItem('currentUser') || 'Usuario';
+	const userAvatar =
+		window.memoryState.currentUserAvatar || localStorage.getItem('currentUserAvatar') || '/assets/images/Group 4.png';
+	const userBgColor = window.memoryState.currentUserBgColor || localStorage.getItem('currentUserBgColor') || '#F9D648';
 
-  const app = document.getElementById('app');
-  app.innerHTML = `
+	const app = document.getElementById('app');
+	app.innerHTML = `
     <div class="screen profile-edit-screen active">
       <button class="back-button" id="profile-back-btn" onclick="window.goBackFromProfile()">
         <div class="back-arrow"></div>
@@ -56,11 +57,11 @@ export const renderProfileEdit = () => {
   `;
 };
 
-// Modal selector de avatar (predefinidos + subir + drag&drop)
 window.openAvatarPicker = () => {
-  const modal = document.createElement('div');
-  modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; z-index:1000; backdrop-filter:blur(2px)';
-  modal.innerHTML = `
+	const modal = document.createElement('div');
+	modal.style.cssText =
+		'position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; z-index:1000; backdrop-filter:blur(2px)';
+	modal.innerHTML = `
     <div style="background:#fff; width:90%; max-width:360px; border-radius:16px; padding:16px;">
       <h3 style="margin:0 0 8px 0; text-align:center;">Elige tu avatar</h3>
       <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
@@ -79,98 +80,108 @@ window.openAvatarPicker = () => {
         <button id="close-avatar" class="btn-primary" style="max-width:160px; background:#1E3A8A; border-color:#0E1A34;">Cerrar</button>
       </div>
     </div>`;
-  document.body.appendChild(modal);
+	document.body.appendChild(modal);
 
-  modal.querySelectorAll('.preset-avatar').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const src = btn.getAttribute('data-src');
-      applyAvatarSrc(src);
-      modal.remove();
-    });
-  });
-  modal.querySelector('#pick-file').addEventListener('click', () => {
-    document.getElementById('avatarInput').click();
-  });
-  modal.querySelector('#close-avatar').addEventListener('click', () => modal.remove());
+	modal.querySelectorAll('.preset-avatar').forEach((btn) => {
+		btn.addEventListener('click', () => {
+			const src = btn.getAttribute('data-src');
+			applyAvatarSrc(src);
+			modal.remove();
+		});
+	});
+	modal.querySelector('#pick-file').addEventListener('click', () => {
+		document.getElementById('avatarInput').click();
+	});
+	modal.querySelector('#close-avatar').addEventListener('click', () => modal.remove());
 
-  // drag & drop
-  const drop = modal.querySelector('#dropzone');
-  ;['dragenter','dragover'].forEach(evt => drop.addEventListener(evt, e => { e.preventDefault(); drop.style.background = '#EEF2FF'; }));
-  ;['dragleave','drop'].forEach(evt => drop.addEventListener(evt, e => { e.preventDefault(); drop.style.background = ''; }));
-  drop.addEventListener('drop', (e) => {
-    const file = e.dataTransfer.files?.[0];
-    if (file) readFileAsDataUrl(file, (dataUrl) => { applyAvatarSrc(dataUrl); modal.remove(); });
-  });
+	const drop = modal.querySelector('#dropzone');
+	['dragenter', 'dragover'].forEach((evt) =>
+		drop.addEventListener(evt, (e) => {
+			e.preventDefault();
+			drop.style.background = '#EEF2FF';
+		})
+	);
+	['dragleave', 'drop'].forEach((evt) =>
+		drop.addEventListener(evt, (e) => {
+			e.preventDefault();
+			drop.style.background = '';
+		})
+	);
+	drop.addEventListener('drop', (e) => {
+		const file = e.dataTransfer.files?.[0];
+		if (file)
+			readFileAsDataUrl(file, (dataUrl) => {
+				applyAvatarSrc(dataUrl);
+				modal.remove();
+			});
+	});
 };
 
 function readFileAsDataUrl(file, cb) {
-  const reader = new FileReader();
-  reader.onload = (e) => cb(e.target.result);
-  reader.readAsDataURL(file);
+	const reader = new FileReader();
+	reader.onload = (e) => cb(e.target.result);
+	reader.readAsDataURL(file);
 }
 
 function applyAvatarSrc(src) {
-  window.memoryState.currentUserAvatar = src;
-  const profileImg = document.querySelector('.profile-img');
-  if (profileImg) profileImg.src = src;
+	window.memoryState.currentUserAvatar = src;
+	const profileImg = document.querySelector('.profile-img');
+	if (profileImg) profileImg.src = src;
 }
 
 window.handleAvatarFile = async (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-  readFileAsDataUrl(file, (dataUrl) => applyAvatarSrc(dataUrl));
+	const file = event.target.files[0];
+	if (!file) return;
+	readFileAsDataUrl(file, (dataUrl) => applyAvatarSrc(dataUrl));
 };
 
 window.selectColor = (color) => {
-  window.memoryState.currentUserBgColor = color;
-  
-  // Actualizar el color de fondo en la pantalla
-  const profilePicture = document.querySelector('.profile-picture');
-  if (profilePicture) {
-    profilePicture.style.backgroundColor = color;
-  }
-  
-  // Remover selección anterior y agregar nueva
-  document.querySelectorAll('.color-option').forEach(option => {
-    option.classList.remove('selected');
-  });
-  document.querySelector(`[data-color="${color}"]`).classList.add('selected');
+	window.memoryState.currentUserBgColor = color;
+
+	const profilePicture = document.querySelector('.profile-picture');
+	if (profilePicture) {
+		profilePicture.style.backgroundColor = color;
+	}
+
+	document.querySelectorAll('.color-option').forEach((option) => {
+		option.classList.remove('selected');
+	});
+	document.querySelector(`[data-color="${color}"]`).classList.add('selected');
 };
 
-
 window.saveProfile = async () => {
-  const username = document.getElementById('username').value;
+	const username = document.getElementById('username').value;
 
-  if (!username) {
-    alert('El nombre de usuario es requerido');
-    return;
-  }
+	if (!username) {
+		alert('El nombre de usuario es requerido');
+		return;
+	}
 
-  try {
-    window.memoryState.currentUser = username;
-    localStorage.setItem('currentUser', username);
-    localStorage.setItem('currentUserAvatar', window.memoryState.currentUserAvatar);
-    localStorage.setItem('currentUserBgColor', window.memoryState.currentUserBgColor);
-    alert('Perfil actualizado exitosamente');
-    navigateTo('/main');
-  } catch (error) {
-    console.error('Error:', error);
-    alert('Error al actualizar el perfil');
-  }
+	try {
+		window.memoryState.currentUser = username;
+		localStorage.setItem('currentUser', username);
+		localStorage.setItem('currentUserAvatar', window.memoryState.currentUserAvatar);
+		localStorage.setItem('currentUserBgColor', window.memoryState.currentUserBgColor);
+		alert('Perfil actualizado exitosamente');
+		navigateTo('/main');
+	} catch (error) {
+		console.error('Error:', error);
+		alert('Error al actualizar el perfil');
+	}
 };
 
 window.logout = () => {
-  if (confirm('¿Seguro que quieres cerrar sesión?')) {
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('currentUserCoins');
-    localStorage.removeItem('currentUserAvatar');
-    localStorage.removeItem('currentUserBgColor');
-    window.memoryState.currentUser = null;
-    window.memoryState.currentUserCoins = 1000;
-    window.location.reload();
-  }
+	if (confirm('¿Seguro que quieres cerrar sesión?')) {
+		localStorage.removeItem('currentUser');
+		localStorage.removeItem('currentUserCoins');
+		localStorage.removeItem('currentUserAvatar');
+		localStorage.removeItem('currentUserBgColor');
+		window.memoryState.currentUser = null;
+		window.memoryState.currentUserCoins = 1000;
+		window.location.reload();
+	}
 };
 
 window.goBackFromProfile = () => {
-  navigateTo('/main');
+	navigateTo('/main');
 };
