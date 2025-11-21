@@ -11,42 +11,10 @@ export default function renderMapScreen({ category, participants, timePerQuestio
       <div class="map-container">
         <div class="map-header">
           <h2 style="text-align:center; color:#1e3a8a; font-size:24px; margin-bottom:8px;">Distribuye las preguntas en el área</h2>
-          <p style="text-align:center; color:#666; margin-bottom:16px;">Presiona el lugar en el mapa donde deseés poner una ubicación de pregunta</p>
+          <p style="text-align:center; color:#666; margin-bottom:16px;">Visualiza el campus de Icesi</p>
         </div>
         
-        <div id="map" style="width:100%; height:400px; background:#1e3a8a; border-radius:16px; position:relative; overflow:hidden; margin:16px 0;">
-          <div style="position:absolute; inset:0; background:url('/assets/images/icesi-map.jpg') center/cover no-repeat;">
-            <div style="position:absolute; top:20px; left:20px; right:20px; background:rgba(255,255,255,0.95); padding:12px; border-radius:12px;">
-              <div style="font-weight:bold; color:#1e3a8a;">ICESI Campus Map</div>
-              <div style="font-size:12px; color:#666;">Categoría: ${category || 'Seleccionar'}</div>
-            </div>
-          </div>
-          
-          <div style="position:absolute; top:80px; left:20px; background:rgba(255,226,138,0.95); padding:8px 12px; border-radius:8px;">
-            <div style="font-weight:bold;">Edificio A</div>
-            <div style="font-size:12px;">📍</div>
-          </div>
-          
-          <div style="position:absolute; bottom:100px; right:40px; background:rgba(255,226,138,0.95); padding:8px 12px; border-radius:8px;">
-            <div style="font-weight:bold;">Biblioteca</div>
-            <div style="font-size:12px;">📍</div>
-          </div>
-          
-          <div style="position:absolute; top:150px; left:40px; background:rgba(255,226,138,0.95); padding:8px 12px; border-radius:8px;">
-            <div style="font-weight:bold;">Cafetería</div>
-            <div style="font-size:12px;">📍</div>
-          </div>
-          
-          <div style="position:absolute; bottom:80px; left:60px; background:rgba(255,226,138,0.95); padding:8px 12px; border-radius:8px;">
-            <div style="font-weight:bold;">Auditorio</div>
-            <div style="font-size:12px;">📍</div>
-          </div>
-          
-          <div style="position:absolute; top:60px; right:60px; background:rgba(255,226,138,0.95); padding:8px 12px; border-radius:8px;">
-            <div style="font-weight:bold;">Laboratorios</div>
-            <div style="font-size:12px;">📍</div>
-          </div>
-        </div>
+        <div id="map" style="width:100%; height:400px; border-radius:16px; overflow:hidden; margin:16px 0; touch-action: pan-x pan-y;"></div>
         
         <div style="margin:16px 0; text-align:center;">
           <button id="create-room-btn" class="btn-primary" style="background:#11A36B; border-color:#0C6E4A; max-width:320px;">Crear sala</button>
@@ -57,5 +25,58 @@ export default function renderMapScreen({ category, participants, timePerQuestio
 
   document.getElementById('map-back-btn').addEventListener('click', () => {
     navigateTo('/main');
+  });
+
+  setTimeout(() => {
+    initMap(category);
+  }, 200);
+}
+
+function initMap(category) {
+  const mapDiv = document.getElementById('map');
+  if (!mapDiv || !window.L) return;
+
+  const icesiCoords = [3.344, -76.5329];
+
+  const map = L.map(mapDiv, {
+    dragging: true,
+    touchZoom: true,
+    scrollWheelZoom: false,
+    doubleClickZoom: true,
+    boxZoom: false,
+    keyboard: false,
+  }).setView(icesiCoords, 17);
+
+  map.leaflet = true;
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+  }).addTo(map);
+
+  const points = [
+    { name: 'Edificio A', coords: [3.3435, -76.533] },
+    { name: 'Biblioteca', coords: [3.3438, -76.5332] },
+    { name: 'Cafetería', coords: [3.3442, -76.5328] },
+    { name: 'Auditorio', coords: [3.3439, -76.5325] },
+    { name: 'Laboratorios', coords: [3.3445, -76.533] },
+  ];
+
+  points.forEach((point, idx) => {
+    const icon = L.divIcon({
+      className: 'custom-question-marker',
+      html: `<div style="background-color: #FFE28A; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid #1e3a8a; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"><span style="color: #1e3a8a; font-weight: bold; font-size: 16px;">${
+        idx + 1
+      }</span></div>`,
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
+    });
+
+    const marker = L.marker(point.coords, { icon: icon }).addTo(map).bindPopup(`
+        <div style="text-align:center; padding:8px; min-width:120px;">
+          <strong style="font-size:16px; color:#1e3a8a;">${point.name}</strong><br/>
+          <small style="color:#666;">Pregunta ${idx + 1}</small><br/>
+          <small style="color:#666;">${category || 'Sin categoría'}</small>
+        </div>
+      `);
   });
 }

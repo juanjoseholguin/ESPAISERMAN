@@ -5,12 +5,10 @@ export default async function renderCreateRoom() {
 
 	try {
 		const response = await fetch('http://localhost:5050/categories');
-		console.log('Response status:', response.status);
 		const categories = await response.json();
-		console.log('Categories received:', categories);
-
-		if (!categories || categories.length === 0) {
-			console.warn('No categories found');
+		
+		if (!Array.isArray(categories)) {
+			throw new Error(categories.error || 'La respuesta no es un array válido');
 		}
 
 		const categoryOptions = categories.map((cat) => `<option value="${cat.id}">${cat.category}</option>`).join('');

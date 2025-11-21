@@ -74,17 +74,30 @@ export default function renderShop() {
     modal.style.display = 'flex';
   }
 
+  let currentItemKey = '';
+  
   document.querySelectorAll('.shop-card').forEach(btn => {
-    btn.addEventListener('click', () => openModal(btn.getAttribute('data-item')));
+    btn.addEventListener('click', () => {
+      currentItemKey = btn.getAttribute('data-item');
+      openModal(currentItemKey);
+    });
   });
+  
   modal.querySelector('#m-back').addEventListener('click', () => { modal.style.display = 'none'; });
   
   modal.querySelector('#m-buy').addEventListener('click', () => {
     const coins = window.memoryState.currentUserCoins || 0;
     if (coins >= 200) {
       updateCoins(200, 'subtract');
+      
+      if (currentItemKey) {
+        const activePowerups = JSON.parse(localStorage.getItem('activePowerups') || '[]');
+        activePowerups.push(currentItemKey);
+        localStorage.setItem('activePowerups', JSON.stringify(activePowerups));
+      }
+      
       modal.style.display = 'none';
-      alert('¡Compra exitosa!');
+      alert('¡Compra exitosa! El potenciador estará disponible en tu próxima partida.');
       renderShop();
     } else {
       alert('No tienes suficientes monedas');

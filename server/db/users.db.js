@@ -10,7 +10,6 @@ const getAllUsers = async () => {
 };
 
 const createUserInDB = async (user) => {
-  // Generar color de fondo aleatorio
   const colors = ['#F9D648', '#8FA6E0', '#11A36B', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7'];
   const randomColor = colors[Math.floor(Math.random() * colors.length)];
   
@@ -20,7 +19,7 @@ const createUserInDB = async (user) => {
       username: user.name || user.username,
       email: user.email || `${user.name}@example.com`,
       password: user.password || null,
-      "espaiser-coin": 100, // Monedas iniciales
+      "espaiser-coin": 100,
       avatar_url: '/assets/images/Group 4.png',
       avatar_bg: randomColor
     }])

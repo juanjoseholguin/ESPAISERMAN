@@ -7,6 +7,10 @@ export default async function renderCreateRoom() {
     const response = await fetch("http://localhost:5050/categories");
     const categories = await response.json();
     
+    if (!Array.isArray(categories)) {
+      throw new Error(categories.error || 'La respuesta no es un array válido');
+    }
+    
     const categoryOptions = categories.map(cat => 
       `<option value="${cat.id}">${cat.category}</option>`
     ).join('');
@@ -51,5 +55,4 @@ export default async function renderCreateRoom() {
     app.innerHTML = `<div style="padding:20px; text-align:center;"><h2>Error cargando categorías</h2></div>`;
   }
 }
-
 
