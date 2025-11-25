@@ -1,10 +1,47 @@
-import { navigateTo } from '../app.js';
+import { navigateTo, makeRequest, memoryState } from '../app.js';
 
-export const renderProfileEdit = () => {
-	const currentUser = window.memoryState.currentUser || localStorage.getItem('currentUser') || 'Usuario';
+export const renderProfileEdit = async () => {
+	const userId = memoryState.currentUserId || Number(localStorage.getItem('currentUserId'));
+	let profile = null;
+	let inventory = memoryState.inventory || [];
+
+	if (userId) {
+		try {
+			const response = await makeRequest(`/users/${userId}/profile`, 'GET');
+			if (response?.success) {
+				profile = response.user;
+				inventory = response.inventory || [];
+				memoryState.inventory = inventory;
+				memoryState.currentUserCoins = response.user?.coins ?? memoryState.currentUserCoins;
+			}
+		} catch (error) {
+			console.warn('No se pudo cargar el perfil desde el servidor:', error);
+		}
+	}
+
+	const currentUser =
+		profile?.username || memoryState.currentUser || localStorage.getItem('currentUser') || 'Usuario';
 	const userAvatar =
-		window.memoryState.currentUserAvatar || localStorage.getItem('currentUserAvatar') || '/assets/images/Group 4.png';
-	const userBgColor = window.memoryState.currentUserBgColor || localStorage.getItem('currentUserBgColor') || '#F9D648';
+		profile?.avatar_url ||
+		memoryState.currentUserAvatar ||
+		localStorage.getItem('currentUserAvatar') ||
+		'/assets/images/Group 4.png';
+	const userBgColor =
+		profile?.avatar_bg || memoryState.currentUserBgColor || localStorage.getItem('currentUserBgColor') || '#F9D648';
+	const coins = profile?.coins ?? memoryState.currentUserCoins ?? parseInt(localStorage.getItem('currentUserCoins') || '0', 10);
+
+	const boostersMarkup =
+		inventory && inventory.length > 0
+			? inventory
+					.map(
+						(item) => `
+        <li style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(0,0,0,0.05);">
+          <span>${item.booster_name}</span>
+          <strong>x${item.quantity}</strong>
+        </li>`
+					)
+					.join('')
+			: `<li style="padding:8px 0; color:#6B7280;">Aún no compras potenciadores.</li>`;
 
 	const app = document.getElementById('app');
 	app.innerHTML = `
@@ -26,6 +63,11 @@ export const renderProfileEdit = () => {
               </svg>
             </button>
             <input type="file" id="avatarInput" accept="image/*" style="display: none" onchange="handleAvatarFile(event)">
+          </div>
+
+          <div style="display:flex; justify-content:center; align-items:center; gap:8px; background:#FFE28A; padding:8px 16px; border-radius:12px; margin-bottom:12px;">
+            <img src="/assets/images/Group 19453.png" style="width:20px; height:20px;">
+            <span style="font-weight:800; color:#1e3a8a;">${coins} monedas</span>
           </div>
 
           <div class="form-group">
@@ -51,6 +93,13 @@ export const renderProfileEdit = () => {
             <button class="btn-primary" onclick="saveProfile()" style="background:#1E3A8A; padding:10px 16px; font-size:14px;">Guardar Cambios</button>
             <button class="btn-primary" onclick="logout()" style="background:#E34C43; border-color:#7E1E19; padding:10px 16px; font-size:14px;">Cerrar Sesión</button>
           </div>
+        </div>
+
+        <div class="profile-card" style="margin-top:16px;">
+          <h2 style="margin-top:0; color:#1e3a8a;">Mis potenciadores</h2>
+          <ul style="list-style:none; padding:0; margin:0;">
+            ${boostersMarkup}
+          </ul>
         </div>
       </div>
     </div>
@@ -150,7 +199,7 @@ window.selectColor = (color) => {
 };
 
 window.saveProfile = async () => {
-	const username = document.getElementById('username').value;
+	const username = document.getElementById('username').value?.trim();
 
 	if (!username) {
 		alert('El nombre de usuario es requerido');
@@ -158,10 +207,32 @@ window.saveProfile = async () => {
 	}
 
 	try {
-		window.memoryState.currentUser = username;
-		localStorage.setItem('currentUser', username);
-		localStorage.setItem('currentUserAvatar', window.memoryState.currentUserAvatar);
-		localStorage.setItem('currentUserBgColor', window.memoryState.currentUserBgColor);
+		if (!memoryState.currentUserId) {
+			alert('Debes iniciar sesión para guardar cambios.');
+			return;
+		}
+
+		const payload = {
+			username,
+			avatar_url: memoryState.currentUserAvatar,
+			avatar_bg: memoryState.currentUserBgColor,
+		};
+
+		const response = await makeRequest(`/users/${memoryState.currentUserId}`, 'PATCH', payload);
+		if (response.error) {
+			alert(response.error || 'No se pudo actualizar el perfil');
+			return;
+		}
+
+		const updatedUser = response.user;
+		memoryState.currentUser = updatedUser.username;
+		memoryState.currentUserAvatar = updatedUser.avatar_url;
+		memoryState.currentUserBgColor = updatedUser.avatar_bg;
+
+		localStorage.setItem('currentUser', updatedUser.username);
+		localStorage.setItem('currentUserAvatar', updatedUser.avatar_url || '');
+		localStorage.setItem('currentUserBgColor', updatedUser.avatar_bg || '');
+
 		alert('Perfil actualizado exitosamente');
 		navigateTo('/main');
 	} catch (error) {
@@ -173,11 +244,14 @@ window.saveProfile = async () => {
 window.logout = () => {
 	if (confirm('¿Seguro que quieres cerrar sesión?')) {
 		localStorage.removeItem('currentUser');
+		localStorage.removeItem('currentUserId');
 		localStorage.removeItem('currentUserCoins');
 		localStorage.removeItem('currentUserAvatar');
 		localStorage.removeItem('currentUserBgColor');
-		window.memoryState.currentUser = null;
-		window.memoryState.currentUserCoins = 1000;
+		memoryState.currentUser = null;
+		memoryState.currentUserId = null;
+		memoryState.currentUserCoins = 0;
+		memoryState.inventory = [];
 		window.location.reload();
 	}
 };

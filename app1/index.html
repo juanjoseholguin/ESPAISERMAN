@@ -15,6 +15,14 @@
 
     <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Supabase JS Client para Realtime -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Configurar variables de Supabase ANTES de cargar app.js -->
+    <script>
+      // Credenciales de Supabase configuradas
+      window.SUPABASE_URL = 'https://zdqqueneqkltmoknqvhe.supabase.co';
+      window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkcXF1ZW5lcWtsdG1va25xdmhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1OTExMTQsImV4cCI6MjA3NDE2NzExNH0.0FOu2bNM5piwgVvEaaTi9XrLY6VvfS6D97mQKilz50A';
+    </script>
     <script type="module" src="app.js"></script>
 </body>
 

@@ -1,6 +1,6 @@
 import { navigateTo } from '../app.js';
 
-export default function renderGameResults({ roomCode } = {}) {
+export default async function renderGameResults({ roomCode } = {}) {
 	const app = document.getElementById('app');
 
 	app.innerHTML = `
@@ -19,15 +19,15 @@ export default function renderGameResults({ roomCode } = {}) {
     </div>
   `;
 
-	const socket = window.socket;
+	// Cargar resultados desde la API
 	let results = [];
-
-	socket.on('room:final-results', (finalResults) => {
-		results = finalResults;
-		renderResults(results);
-	});
-
-	socket.emit('request-final-results', { roomCode });
+	try {
+		const { getRoomResultsAPI } = await import('../services/roomsRealtime.js');
+		const apiResults = await getRoomResultsAPI(roomCode);
+		results = apiResults.map(r => ({ name: r.player_name, score: r.score || 0 }));
+	} catch (error) {
+		console.error('Error loading results:', error);
+	}
 
 	function renderResults(playerResults = []) {
 		const list = document.getElementById('results-list');

@@ -1,4 +1,4 @@
-import { navigateTo } from "../app.js";
+import { navigateTo, makeRequest, memoryState } from "../app.js";
 
 export default function renderLoginRegister() {
   const app = document.getElementById("app");
@@ -116,18 +116,48 @@ export default function renderLoginRegister() {
     splashScreen.classList.add("active");
   });
 
+  const persistSession = (user, inventory = []) => {
+    if (!user) return;
+    memoryState.currentUser = user.username;
+    memoryState.currentUserId = user.id;
+    memoryState.currentUserCoins = user.coins;
+    memoryState.inventory = inventory;
+    memoryState.currentUserAvatar = user.avatar_url;
+    memoryState.currentUserBgColor = user.avatar_bg;
+
+    localStorage.setItem('currentUser', user.username);
+    localStorage.setItem('currentUserId', user.id);
+    localStorage.setItem('currentUserCoins', user.coins ?? 0);
+    localStorage.setItem('currentUserAvatar', user.avatar_url ?? '');
+    localStorage.setItem('currentUserBgColor', user.avatar_bg ?? '');
+  };
+
   document.getElementById("login-btn").addEventListener("click", async () => {
-    const username = document.getElementById("login-username").value;
+    const identifier = document.getElementById("login-username").value?.trim();
     const password = document.getElementById("login-password").value;
-    if (!username || !password) { alert("Por favor completa todos los campos"); return; }
-    window.memoryState.currentUser = username;
-    localStorage.setItem('currentUser', username);
-    navigateTo("/create");
+
+    if (!identifier || !password) { 
+      alert("Por favor completa todos los campos"); 
+      return; 
+    }
+
+    try {
+      const response = await makeRequest("/auth/login", "POST", { email: identifier, password });
+      if (response.error) {
+        alert(response.error);
+        return;
+      }
+      persistSession(response.user, response.inventory);
+      navigateTo("/create");
+    } catch (error) {
+      console.error("Error logging in:", error);
+      alert("No se pudo iniciar sesión. Intenta nuevamente.");
+    }
   });
 
   document.getElementById("register-btn").addEventListener("click", async () => {
-    const name = document.getElementById("register-name").value;
-    const email = document.getElementById("register-email").value;
+    const name = document.getElementById("register-name").value?.trim();
+    const email = document.getElementById("register-email").value?.trim();
     const password = document.getElementById("register-password").value;
     const confirmPassword = document.getElementById("register-confirm-password").value;
     
@@ -142,11 +172,23 @@ export default function renderLoginRegister() {
     }
     
     try {
-      window.memoryState.currentUser = name;
-      localStorage.setItem('currentUser', name);
+      const response = await makeRequest("/auth/register", "POST", {
+        name,
+        username: name,
+        email,
+        password,
+      });
+
+      if (response.error) {
+        alert(response.error);
+        return;
+      }
+
+      persistSession(response.user, []);
       alert("Cuenta creada exitosamente");
       navigateTo("/create");
     } catch (error) {
+      console.error("Error registering user:", error);
       alert("Error al conectar con el servidor");
     }
   });

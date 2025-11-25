@@ -1,6 +1,6 @@
 import { navigateTo } from '../app.js';
 
-export default function renderLobby({ code } = {}) {
+export default async function renderLobby({ code } = {}) {
 	const app = document.getElementById('app');
 	app.innerHTML = `
     <div class="screen active">
@@ -15,27 +15,31 @@ export default function renderLobby({ code } = {}) {
 						code || 'SAM 000'
 					}</div>
           <div style="background:rgba(255,255,255,0.95); border-radius:20px; padding:16px; min-height:200px;">
-            <ol id="players-list" style="text-align:left; line-height:32px; margin:0; list-style-position: inside;"></ol>
+            <ul id="players-list" style="text-align:left; line-height:32px; margin:0; list-style:none; padding:0;"></ul>
           </div>
-          <p style="color:#666; margin-top:16px; font-size:14px;">Esperando a que el moderador inicie la partida...</p>
+          <p id="waiting-message" style="color:#666; margin-top:16px; font-size:14px;">Esperando a que el moderador inicie la partida...</p>
         </div>
       </div>
     </div>
   `;
 
-	const socket = window.socket || window.io('/', { path: '/real-time' });
+	let subscription = null;
 	let hasJoined = false;
 
 	function renderPlayers(state) {
 		const list = document.getElementById('players-list');
 		if (!list) return;
 
-		if (!state.players || state.players.length === 0) {
+		console.log('🎮 Rendering players with state:', state);
+
+		if (!state || !state.players || state.players.length === 0) {
 			list.innerHTML = "<li style='text-align:center; color:#666;'>Esperando jugadores...</li>";
 			return;
 		}
 
-		const uniquePlayers = [...new Map(state.players.map((p) => [p.id || p.name, p])).values()];
+		const uniquePlayers = [...new Map(state.players.map((p) => [p.id || p.user_id || p.name, p])).values()];
+
+		console.log(`👥 Rendering ${uniquePlayers.length} unique players:`, uniquePlayers);
 
 		list.innerHTML = '';
 		uniquePlayers.forEach((p, idx) => {
@@ -43,51 +47,94 @@ export default function renderLobby({ code } = {}) {
 			li.style.padding = '8px 0';
 			li.style.borderBottom = idx < uniquePlayers.length - 1 ? '1px solid rgba(0,0,0,0.1)' : 'none';
 			li.style.fontSize = '16px';
-			li.innerHTML = `${p.name || 'Jugador'}`;
+			// Usar player_name si existe, sino name
+			const playerName = p.player_name || p.name || 'Jugador';
+			li.innerHTML = `${idx + 1}. ${playerName}`;
 			list.appendChild(li);
 		});
 		const codeEl = document.getElementById('lobby-code');
 		if (codeEl && state.code) codeEl.textContent = state.code;
+
+		// Actualizar mensaje de espera
+		const waitingMsg = document.getElementById('waiting-message');
+		if (waitingMsg) {
+			if (state.room_status) {
+				waitingMsg.textContent = '¡La partida está iniciando...!';
+				waitingMsg.style.color = '#11A36B';
+			} else {
+				waitingMsg.textContent = 'Esperando a que el moderador inicie la partida...';
+				waitingMsg.style.color = '#666';
+			}
+		}
+
+		// Verificar si la sala inició (los jugadores no necesitan roomQuestions, solo verificar room_status)
+		if (state.room_status) {
+			console.log('🎮 Game started, navigating to active game');
+			if (subscription) subscription.unsubscribe();
+			// Pequeño delay para que el usuario vea el mensaje de "iniciando"
+			setTimeout(() => {
+				navigateTo('/active', { roomCode: code });
+			}, 500);
+		}
 	}
 
-	socket.off('room:state');
-	socket.off('room:started');
-	socket.off('room:error');
-	socket.off('room:joined');
-
-	socket.on('room:state', renderPlayers);
-
-	socket.on('room:started', async (data) => {
-		console.log('Game started, navigating to active game');
-		console.log('Question IDs:', data.questionIds);
-		console.log('Time per question:', data.timePerQuestion);
-
-		try {
-			const questionPromises = data.questionIds.map((id) =>
-				fetch(`http://localhost:5050/questions/${id}`).then((res) => res.json())
-			);
-
-			const questions = await Promise.all(questionPromises);
-			window.roomQuestions = questions;
-			window.roomTimePerQuestion = data.timePerQuestion || 30;
-			console.log('Questions loaded:', questions);
-
-			navigateTo('/active', { roomCode: code });
-		} catch (error) {
-			console.error('Error loading questions:', error);
-			alert('Error cargando las preguntas. Intenta de nuevo.');
+	// Cargar estado inicial
+	const { subscribeToRoom, loadRoomState } = await import('../services/roomsRealtime.js');
+	
+	// Función para recargar el estado
+	const reloadRoomState = async () => {
+		console.log(`🔄 Reloading room state for: ${code}`);
+		const state = await loadRoomState(code);
+		if (state) {
+			console.log(`✅ State reloaded:`, state);
+			renderPlayers(state);
+		} else {
+			console.warn(`⚠️ No state returned for room ${code}`);
 		}
-	});
+	};
+	
+	// Cargar estado inicial
+	if (code) {
+		await reloadRoomState();
+	}
 
-	socket.on('room:error', (error) => {
-		console.error('Room error:', error);
-		alert(error.message || 'Error al unirse a la sala');
-	});
+	// Suscribirse a cambios en tiempo real
+	if (code) {
+		subscription = subscribeToRoom(code, async (state) => {
+			console.log('🔄 Cambio detectado en sala, recargando estado...');
+			// Recargar el estado completo cuando hay cambios
+			const updatedState = await reloadRoomState();
+			
+			// Si la sala se inicia (room_status cambia a true), navegar automáticamente
+			if (updatedState && updatedState.room_status) {
+				console.log('🎮 Room started detected via Realtime, navigating to active game');
+				// Actualizar mensaje antes de navegar
+				const waitingMsg = document.getElementById('waiting-message');
+				if (waitingMsg) {
+					waitingMsg.textContent = '¡La partida está iniciando...!';
+					waitingMsg.style.color = '#11A36B';
+				}
+				if (subscription) subscription.unsubscribe();
+				// Guardar información de la sala antes de navegar
+				const roomState = await reloadRoomState();
+				if (roomState) {
+					window.roomTimePerQuestion = roomState.timePerQuestion;
+					window.roomCategory = roomState.category;
+				}
+				
+				// Pequeño delay para que el usuario vea el mensaje de "iniciando"
+				setTimeout(() => {
+					navigateTo('/active', { roomCode: code });
+				}, 500);
+			}
+		});
+	}
 
-	setTimeout(() => {
+	setTimeout(async () => {
 		const backBtn = document.getElementById('back-lobby');
 		if (backBtn) {
 			backBtn.addEventListener('click', () => {
+				if (subscription) subscription.unsubscribe();
 				navigateTo('/main');
 			});
 		}
@@ -95,12 +142,28 @@ export default function renderLobby({ code } = {}) {
 		if (code && !hasJoined) {
 			hasJoined = true;
 			console.log('Joining room with code:', code);
-			socket.emit('room:join', {
-				code,
-				playerName: window.memoryState.currentUser || 'Jugador',
-				avatar_url: window.memoryState.currentUserAvatar,
-				avatar_bg: window.memoryState.currentUserBgColor,
-			});
+			try {
+				const { joinRoomAPI } = await import('../services/roomsRealtime.js');
+				const result = await joinRoomAPI(
+					code,
+					window.memoryState.currentUserId,
+					window.memoryState.currentUser || 'Jugador',
+					window.memoryState.currentUserAvatar,
+					window.memoryState.currentUserBgColor,
+					false
+				);
+				console.log('✅ Successfully joined room:', result);
+				
+				// Recargar el estado después de unirse para ver el jugador en la lista
+				// Esperar un poco más para que Supabase procese el INSERT
+				setTimeout(async () => {
+					console.log('🔄 Recargando estado después de unirse...');
+					await reloadRoomState();
+				}, 1000);
+			} catch (error) {
+				console.error('Error joining room:', error);
+				alert(error.message || 'Error al unirse a la sala');
+			}
 		}
 	}, 100);
 }

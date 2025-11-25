@@ -1,12 +1,135 @@
-import { navigateTo } from '../app.js';
+import { navigateTo, makeRequest, memoryState, updateCoins } from '../app.js';
 
-export default function renderActiveGame({ roomCode } = {}) {
+// Función para suscribirse a cambios en el inventario usando Supabase Realtime
+function setupInventoryRealtime(userId) {
+  if (typeof window.supabase === 'undefined' && typeof supabase === 'undefined') {
+    console.warn('Supabase no está disponible para Realtime. Asegúrate de incluir el script en index.html');
+    return null;
+  }
+
+  const SUPABASE_URL = window.SUPABASE_URL;
+  const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
+  
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.warn('⚠️ SUPABASE_URL o SUPABASE_ANON_KEY no están configurados en index.html');
+    return null;
+  }
+  
+  // Usar la función createClient de Supabase
+  const supabaseLib = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+  if (!supabaseLib || !supabaseLib.createClient) {
+    console.warn('⚠️ Supabase createClient no está disponible');
+    return null;
+  }
+  
+  const supabaseClient = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const channel = supabaseClient
+    .channel(`inventory-game-${userId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'boosters_per_user',
+        filter: `user_id=eq.${userId}`
+      },
+      async (payload) => {
+        console.log('🔄 Cambio en inventario durante el juego:', payload);
+        
+        try {
+          const response = await makeRequest(`/users/${userId}/boosters`, 'GET');
+          if (response?.success && response.inventory) {
+            memoryState.inventory = response.inventory;
+            console.log('✅ Inventario actualizado en juego:', memoryState.inventory);
+            
+            // Actualizar la barra de potenciadores si existe
+            const inventoryResponse = memoryState.inventory;
+            const formattedInventory = formatInventoryList(inventoryResponse);
+            const powerupsBanner = renderPowerupsBar(formattedInventory);
+            const existingBanner = document.querySelector('[style*="Potenciadores disponibles"]')?.closest('div[style*="padding:8px"]');
+            if (existingBanner) {
+              existingBanner.outerHTML = powerupsBanner;
+            }
+          }
+        } catch (error) {
+          console.error('Error actualizando inventario en juego:', error);
+        }
+      }
+    )
+    .subscribe();
+
+  return channel;
+}
+
+const boosterAssets = {
+	empanada: '/assets/images/empanada.png',
+	guaro: '/assets/images/guaro.png',
+	chicharron: '/assets/images/chicharron.png',
+	cafe: '/assets/images/cafe.png',
+};
+
+const boosterSlugByName = {
+	'Empanadirri': 'empanada',
+	'Empanadirri legal': 'empanada',
+	'Media': 'guaro',
+	'Media de güaro temporal': 'guaro',
+	'Chichaghrrrom': 'chicharron',
+	'Chichaghrrom': 'chicharron',
+	'Café': 'cafe',
+	'Café cargado': 'cafe',
+};
+
+const boosterDescriptions = {
+	empanada: 'Agrega 10 segundos directamente al reloj.',
+	guaro: 'Suma 5 segundos y congela el reloj durante 5 segundos.',
+	chicharron: 'Duplica las monedas del siguiente acierto (200 en vez de 100).',
+	cafe: 'Reduce 10 segundos al reloj para apurarte.',
+};
+
+export default async function renderActiveGame({ roomCode } = {}) {
 	const app = document.getElementById('app');
+	app.innerHTML = `
+    <div class="screen active">
+      <div class="main-content" style="padding:32px; text-align:center;">
+        <p style="font-weight:600; color:#1e3a8a;">Cargando partida...</p>
+      </div>
+    </div>`;
 	const currentQuestion = window.currentQuestionIndex || 1;
-	const timePerQuestion = window.roomTimePerQuestion || 30;
-
-	const socket = window.socket;
+	
+	// Obtener información de la sala para cargar las preguntas
 	let questions = window.roomQuestions || [];
+	let timePerQuestion = window.roomTimePerQuestion || 30;
+	let roomCategory = null;
+
+	// Si no hay preguntas, intentar obtenerlas desde el servidor usando el roomCode
+	if (questions.length === 0 && roomCode) {
+		console.log('📥 No hay preguntas en window.roomQuestions, obteniendo desde el servidor...');
+		try {
+			// Obtener información de la sala
+			const roomResponse = await fetch(`http://localhost:5050/rooms/${roomCode}`);
+			if (roomResponse.ok) {
+				const roomData = await roomResponse.json();
+				roomCategory = roomData.room_category_id;
+				timePerQuestion = roomData.time_per_question || 30;
+				
+				console.log(`✅ Sala encontrada, categoría: ${roomCategory}, tiempo: ${timePerQuestion}`);
+				
+				// Obtener preguntas de la categoría
+				if (roomCategory) {
+					const questionsResponse = await fetch(`http://localhost:5050/questions/category/${roomCategory}`);
+					if (questionsResponse.ok) {
+						const allQuestions = await questionsResponse.json();
+						// Tomar las primeras 5 preguntas (igual que el moderador)
+						questions = Array.isArray(allQuestions) ? allQuestions.slice(0, 5) : [];
+						console.log(`✅ ${questions.length} preguntas cargadas desde el servidor`);
+					}
+				}
+			}
+		} catch (error) {
+			console.error('Error cargando preguntas desde el servidor:', error);
+		}
+	}
 
 	if (questions.length === 0) {
 		app.innerHTML = `
@@ -18,6 +141,10 @@ export default function renderActiveGame({ roomCode } = {}) {
     `;
 		return;
 	}
+
+	// Guardar las preguntas y tiempo en window para uso posterior
+	window.roomQuestions = questions;
+	window.roomTimePerQuestion = timePerQuestion;
 
 	const formattedQuestions = questions.map((q) => {
 		let answers = [];
@@ -46,6 +173,39 @@ export default function renderActiveGame({ roomCode } = {}) {
 	}
 
 	const question = formattedQuestions[currentQuestion - 1];
+	
+	// Limpiar suscripción anterior si existe
+	if (window.inventoryGameChannel) {
+		window.inventoryGameChannel.unsubscribe();
+	}
+	
+	// SIEMPRE cargar el inventario desde el servidor para asegurar datos actualizados
+	let inventoryResponse = [];
+	try {
+		inventoryResponse = await loadInventory();
+		console.log('🎮 Inventario cargado del servidor:', inventoryResponse);
+		console.log('🎮 Detalles:', inventoryResponse.map(i => `${i.booster_name}: x${i.quantity || 0}`));
+		
+		// Actualizar memoryState con el inventario cargado
+		if (inventoryResponse && inventoryResponse.length > 0) {
+			memoryState.inventory = inventoryResponse;
+		}
+	} catch (error) {
+		console.error('Error cargando inventario:', error);
+		// Fallback a memoryState si hay error
+		if (memoryState.inventory && memoryState.inventory.length > 0) {
+			inventoryResponse = memoryState.inventory;
+			console.log('⚠️ Usando inventario de memoryState (fallback):', inventoryResponse);
+		}
+	}
+	
+	// Configurar Realtime para actualizar inventario durante el juego
+	if (memoryState.currentUserId) {
+		window.inventoryGameChannel = setupInventoryRealtime(memoryState.currentUserId);
+	}
+	
+	const formattedInventory = formatInventoryList(inventoryResponse);
+	console.log('🎮 Inventario formateado:', formattedInventory);
 
 	const points = [
 		{ name: 'Edificio A', coords: [3.3435, -76.533] },
@@ -56,63 +216,53 @@ export default function renderActiveGame({ roomCode } = {}) {
 	];
 
 	const currentPoint = points[currentQuestion - 1] || points[0];
-	const activePowerups = JSON.parse(localStorage.getItem('activePowerups') || '[]');
-
-	const powerupNames = {
-		guaro: 'Media',
-		chicharron: 'Chichaghrrrom',
-		empanada: 'Empanadirri',
-		cafe: 'Café'
-	};
+	const powerupsBanner = renderPowerupsBar(formattedInventory);
 
 	app.innerHTML = `
     <div class="screen active">
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px;">
-        <div style="display:flex; align-items:center; gap:8px; background:#FFE28A; padding:8px 16px; border-radius:16px;">
-          <img src="/assets/images/Group 19453.png" alt="coin" style="width:24px; height:24px;">
-          <span style="font-weight:800; color:#1e3a8a; font-size:16px;">${
-						window.memoryState.currentUserCoins || 1000
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; flex-wrap:wrap; gap:8px;">
+        <div style="display:flex; align-items:center; gap:6px; background:#FFE28A; padding:6px 12px; border-radius:12px; min-width:fit-content;">
+          <img src="/assets/images/Group 19453.png" alt="coin" style="width:20px; height:20px; flex-shrink:0;">
+          <span id="coins-balance" style="font-weight:800; color:#1e3a8a; font-size:15px; white-space:nowrap;">${
+						(() => {
+							const fromMemory = memoryState.currentUserCoins;
+							const fromStorage = parseInt(localStorage.getItem('currentUserCoins') || '0', 10);
+							return fromMemory || fromStorage || 0;
+						})()
 					}</span>
         </div>
-        <div style="font-weight:800; color:#1e3a8a;">${window.memoryState.currentUser || 'Jugador'}</div>
+        <div style="font-weight:800; color:#1e3a8a; font-size:14px; text-overflow:ellipsis; overflow:hidden; max-width:150px;">${memoryState.currentUser || 'Jugador'}</div>
       </div>
 
-      ${activePowerups.length > 0 ? `
-      <div style="display:flex; gap:8px; padding:8px 16px; margin-bottom:8px; overflow-x:auto; background:rgba(255,226,138,0.3);">
-        <div style="font-weight:bold; color:#1e3a8a; margin-right:8px; display:flex; align-items:center;">⚡ Potenciadores:</div>
-        ${activePowerups.map(powerup => `
-          <div style="background:rgba(255,226,138,0.95); padding:6px 10px; border-radius:10px; display:flex; align-items:center; gap:6px; min-width:fit-content; border:2px solid #1e3a8a;">
-            <img src="/assets/images/${powerup}.png" alt="${powerup}" style="width:28px; height:28px; object-fit:contain;">
-            <span style="font-size:13px; font-weight:bold; color:#1e3a8a;">${powerupNames[powerup] || powerup}</span>
-          </div>
-        `).join('')}
-      </div>
-      ` : ''}
+      ${powerupsBanner}
 
-      <div id="map-game" style="width:100%; height:300px; position:relative; margin:12px 16px; border-radius:16px; overflow:hidden; background:#1e3a8a;">
-        <div style="position:absolute; top:20px; left:20px; right:20px; background:rgba(255,255,255,0.95); padding:12px; border-radius:12px; z-index:1000;">
+      <div id="powerup-feedback" style="text-align:center; color:#1e3a8a; font-weight:600; min-height:20px;"></div>
+
+      <div id="map-game" style="width:100%; max-width:100%; height:250px; min-height:200px; position:relative; margin:8px 12px; border-radius:12px; overflow:hidden; background:#1e3a8a;">
+        <div style="position:absolute; top:12px; left:12px; right:12px; background:rgba(255,255,255,0.95); padding:8px 10px; border-radius:10px; z-index:1000; font-size:14px;">
           <div style="font-weight:bold; color:#1e3a8a;">Campus Icesi - Punto ${currentQuestion}/5</div>
         </div>
-        <div style="position:absolute; bottom:20px; right:20px; background:rgba(255,226,138,0.95); padding:8px 12px; border-radius:8px; z-index:1000;">
+        <div style="position:absolute; bottom:12px; right:12px; background:rgba(255,226,138,0.95); padding:6px 10px; border-radius:8px; z-index:1000; font-size:13px;">
           <div style="font-weight:bold;">📍 ${currentPoint.name}</div>
         </div>
       </div>
 
-      <div style="background:rgba(255,255,255,0.95); border-radius:16px; padding:20px; margin:0 16px;">
-        <div style="background:#e5e7eb; border-radius:12px; overflow:hidden; margin-bottom:12px; height:32px; position:relative;">
+      <div style="background:rgba(255,255,255,0.95); border-radius:16px; padding:16px; margin:0 12px;">
+        <div style="background:#e5e7eb; border-radius:12px; overflow:hidden; margin-bottom:12px; height:32px; min-height:32px; position:relative;">
           <div id="timer-bar" style="background:linear-gradient(90deg, #11A36B 0%, #FFB347 50%, #E34C43 100%); height:100%; width:100%; transition:width 0.1s linear; display:flex; align-items:center; justify-content:center;">
-            <span id="timer-text" style="color:white; font-weight:bold; font-size:16px; position:relative; z-index:1;">${timePerQuestion}s</span>
+            <span id="timer-text" style="color:white; font-weight:bold; font-size:15px; position:relative; z-index:1;">${timePerQuestion}s</span>
           </div>
+          <div id="double-points-pill" style="position:absolute; top:-10px; right:8px; background:#E34C43; color:white; font-weight:bold; padding:3px 8px; border-radius:999px; font-size:11px; display:none; box-shadow:0 2px 8px rgba(0,0,0,0.2);">x2 activo</div>
         </div>
-        <h2 style="text-align:center; color:#1e3a8a; font-size:20px; margin-bottom:16px;">${question.q}</h2>
+        <h2 style="text-align:center; color:#1e3a8a; font-size:18px; margin-bottom:14px; line-height:1.3; padding:0 4px;">${question.q}</h2>
 
-        <div style="display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; flex-direction:column; gap:8px;">
           ${question.options
 						.map(
 							(opt, idx) => `
             <button class="answer-btn" data-answer="${opt}" style="background:${
 								['#E34C43', '#11A36B', '#FFB347', '#8FA6E0'][idx]
-							}; padding:12px; border:none; border-radius:12px; text-align:left; color:white; font-size:16px;">
+							}; padding:14px 12px; border:none; border-radius:12px; text-align:left; color:white; font-size:15px; min-height:48px; word-wrap:break-word;">
               <span style="font-weight:bold;">${String.fromCharCode(65 + idx)})</span> ${
 								question.labels[idx].split(') ')[1]
 							}
@@ -152,141 +302,407 @@ export default function renderActiveGame({ roomCode } = {}) {
 			L.marker(currentPoint.coords, { icon: icon }).addTo(map);
 		}
 
-		let answered = false;
-		let timeLeft = timePerQuestion;
-		let currentActivePowerups = JSON.parse(localStorage.getItem('activePowerups') || '[]');
-		let timeFrozen = false;
-		let doublePoints = false;
-		let freezeEndTime = 0;
-
-		console.log('Potenciadores activos al inicio:', currentActivePowerups);
-
-		if (currentActivePowerups.includes('guaro')) {
-			timeLeft += 5;
-			timeFrozen = true;
-			freezeEndTime = Date.now() + 5000;
-			currentActivePowerups = currentActivePowerups.filter(p => p !== 'guaro');
-			localStorage.setItem('activePowerups', JSON.stringify(currentActivePowerups));
-			console.log('Media activado: +5 segundos y tiempo congelado por 5s');
-		}
-
-		if (currentActivePowerups.includes('cafe')) {
-			timeLeft = Math.max(10, timeLeft - 10);
-			currentActivePowerups = currentActivePowerups.filter(p => p !== 'cafe');
-			localStorage.setItem('activePowerups', JSON.stringify(currentActivePowerups));
-			console.log('Café activado: tiempo reducido');
-		}
-
-		if (currentActivePowerups.includes('chicharron')) {
-			doublePoints = true;
-			console.log('Chichaghrrrom activado: puntos dobles');
-		}
-
-		if (currentActivePowerups.includes('empanada')) {
-			currentActivePowerups = currentActivePowerups.filter(p => p !== 'empanada');
-			localStorage.setItem('activePowerups', JSON.stringify(currentActivePowerups));
-			console.log('Empanadirri usado');
-		}
+		const state = {
+			answered: false,
+			timeLeft: timePerQuestion,
+			timeFrozen: false,
+			doublePoints: false,
+			autoCorrect: false,
+			freezeEndTime: 0,
+			timer: null,
+		};
 
 		const timerBar = document.getElementById('timer-bar');
 		const timerText = document.getElementById('timer-text');
-		timerText.textContent = `${timeLeft}s`;
-		const initialPercentage = (timeLeft / timePerQuestion) * 100;
-		timerBar.style.width = `${Math.min(100, initialPercentage)}%`;
+		const coinsLabel = document.getElementById('coins-balance');
+		const feedbackEl = document.getElementById('powerup-feedback');
+		const doublePointsPill = document.getElementById('double-points-pill');
+		const answerButtons = Array.from(document.querySelectorAll('.answer-btn'));
+		
+		// Asegurar que las monedas estén inicializadas correctamente
+		const savedCoins = parseInt(localStorage.getItem('currentUserCoins') || '0', 10);
+		// Siempre usar el valor más alto entre memoryState y localStorage
+		const currentCoins = Math.max(
+			memoryState.currentUserCoins || 0,
+			savedCoins || 0
+		);
+		memoryState.currentUserCoins = currentCoins;
+		localStorage.setItem('currentUserCoins', currentCoins.toString());
+		
+		// Sincronizar siempre con localStorage para mantener consistencia
+		if (coinsLabel) {
+			coinsLabel.textContent = currentCoins;
+		}
+		console.log('💰 Monedas inicializadas en pregunta', currentQuestion, ':', { 
+			memoryState: memoryState.currentUserCoins, 
+			localStorage: savedCoins,
+			final: currentCoins,
+			displayed: coinsLabel?.textContent 
+		});
 
-		const timerInterval = setInterval(() => {
-			if (answered) {
-				clearInterval(timerInterval);
-				return;
-			}
+		const showFeedback = (message) => {
+			if (!feedbackEl) return;
+			feedbackEl.textContent = message;
+			setTimeout(() => {
+				if (feedbackEl.textContent === message) feedbackEl.textContent = '';
+			}, 3500);
+		};
 
-			if (timeFrozen && Date.now() < freezeEndTime) {
-				return;
-			} else if (timeFrozen && Date.now() >= freezeEndTime) {
-				timeFrozen = false;
-			}
-
-			timeLeft--;
-			timerText.textContent = `${timeLeft}s`;
-			const percentage = (timeLeft / timePerQuestion) * 100;
+		const updateTimerUI = () => {
+			if (!timerBar || !timerText) return;
+			timerText.textContent = `${state.timeLeft}s`;
+			const percentage = (state.timeLeft / timePerQuestion) * 100;
 			timerBar.style.width = `${Math.max(0, percentage)}%`;
+		};
 
-			if (timeLeft <= 0) {
-				clearInterval(timerInterval);
-				answered = true;
-				document.querySelectorAll('.answer-btn').forEach((btn) => {
-					btn.disabled = true;
-					btn.style.opacity = '0.5';
-				});
+		const lockAnswers = () => {
+			answerButtons.forEach((btn) => {
+				btn.disabled = true;
+				btn.style.opacity = '0.5';
+			});
+		};
 
-				setTimeout(() => {
-					if (currentQuestion < formattedQuestions.length) {
-						window.currentQuestionIndex = currentQuestion + 1;
-						navigateTo('/active', { roomCode });
-					} else {
-						window.currentQuestionIndex = 1;
-						navigateTo('/results', { roomCode });
-					}
-				}, 1000);
+		const goToNextStep = () => {
+			if (currentQuestion < formattedQuestions.length) {
+				window.currentQuestionIndex = currentQuestion + 1;
+				navigateTo('/active', { roomCode });
+			} else {
+				window.currentQuestionIndex = 1;
+				navigateTo('/results', { roomCode });
 			}
-		}, 1000);
+		};
 
-		document.querySelectorAll('.answer-btn').forEach((btn) => {
-			btn.addEventListener('click', (e) => {
-				if (answered) return;
-				answered = true;
-				clearInterval(timerInterval);
+		const applyPowerupEffect = (slug) => {
+			switch (slug) {
+				case 'guaro':
+					state.timeLeft += 5;
+					state.timeFrozen = true;
+					state.freezeEndTime = Date.now() + 5000;
+					updateTimerUI();
+					showFeedback('Media activada: +5s y reloj congelado.');
+					break;
+				case 'cafe':
+					state.timeLeft = Math.max(5, state.timeLeft - 10);
+					updateTimerUI();
+					showFeedback('Café activado: reloj más rápido.');
+					break;
+				case 'chicharron':
+					state.doublePoints = true;
+					if (doublePointsPill) doublePointsPill.style.display = 'block';
+					showFeedback('Chichaghrrrom: tus puntos serán x2.');
+					break;
+				case 'empanada':
+					state.timeLeft += 10;
+					updateTimerUI();
+					showFeedback('Empanadirri activada: +10 segundos de tiempo.');
+					break;
+				default:
+					break;
+			}
+		};
 
-				const answer = e.target.closest('.answer-btn').dataset.answer;
-				const correct = answer === question.correct;
+		const startTimer = () => {
+			updateTimerUI();
+			state.timer = setInterval(() => {
+				if (state.answered) {
+					clearInterval(state.timer);
+					return;
+				}
 
-				const clickedBtn = e.target.closest('.answer-btn');
+				if (state.timeFrozen && Date.now() < state.freezeEndTime) {
+					return;
+				} else if (state.timeFrozen && Date.now() >= state.freezeEndTime) {
+					state.timeFrozen = false;
+				}
+
+				state.timeLeft -= 1;
+				updateTimerUI();
+
+				if (state.timeLeft <= 0) {
+					clearInterval(state.timer);
+					state.answered = true;
+					lockAnswers();
+					setTimeout(() => goToNextStep(), 1000);
+				}
+			}, 1000);
+		};
+
+		const boosterNameBySlug = {
+			empanada: 'Empanadirri',
+			guaro: 'Media',
+			chicharron: 'Chichaghrrrom',
+			cafe: 'Café',
+		};
+
+		const handlePowerupUse = async (boosterId, slug, button) => {
+			if (!memoryState.currentUserId) {
+				alert('Debes iniciar sesión para usar potenciadores.');
+				return;
+			}
+
+			button.disabled = true;
+			try {
+				const response = await makeRequest(`/users/${memoryState.currentUserId}/boosters/consume`, 'POST', {
+					boosterId,
+				});
+				if (response.error) {
+					alert(response.error);
+					return;
+				}
+				memoryState.inventory = response.inventory;
+				updatePowerupQuantities(response.inventory);
+				applyPowerupEffect(slug);
+				showFeedback(`Activaste ${boosterNameBySlug[slug] || 'tu potenciador'}.`);
+			} catch (error) {
+				console.error('Error usando potenciador:', error);
+				alert('No se pudo usar el potenciador, intenta de nuevo.');
+			} finally {
+				button.disabled = false;
+			}
+		};
+
+		document.querySelectorAll('.power-card .use-power').forEach((btn) => {
+			const card = btn.closest('.power-card');
+			const boosterId = Number(card?.getAttribute('data-booster-id'));
+			const slug = card?.getAttribute('data-booster-slug');
+			if (!boosterId || !slug) return;
+			btn.addEventListener('click', () => handlePowerupUse(boosterId, slug, btn));
+		});
+
+		answerButtons.forEach((btn) => {
+			btn.addEventListener('click', async (e) => {
+				if (state.answered) return;
+				state.answered = true;
+				if (state.timer) clearInterval(state.timer);
+
+				const clickedBtn = e.currentTarget;
+				const answer = clickedBtn.dataset.answer;
+				const isCorrect = answer === question.correct;
+
 				clickedBtn.style.opacity = '0.7';
 				clickedBtn.style.transform = 'scale(0.95)';
 
-				if (correct) {
+				if (isCorrect) {
 					clickedBtn.style.border = '3px solid #11A36B';
-					const currentScore = window.memoryState.currentUserCoins || 1000;
-					const pointsEarned = doublePoints ? 200 : 100;
-					window.memoryState.currentUserCoins = currentScore + pointsEarned;
-					localStorage.setItem('currentUserCoins', window.memoryState.currentUserCoins);
-
-					if (doublePoints) {
-						currentActivePowerups = currentActivePowerups.filter(p => p !== 'chicharron');
-						localStorage.setItem('activePowerups', JSON.stringify(currentActivePowerups));
-						console.log('Chichaghrrrom usado: puntos dobles aplicados');
+					const coinsEarned = state.doublePoints ? 200 : 100;
+					
+					// Obtener monedas actuales desde múltiples fuentes para asegurar consistencia
+					const currentCoinsFromMemory = memoryState.currentUserCoins || 0;
+					const currentCoinsFromStorage = parseInt(localStorage.getItem('currentUserCoins') || '0', 10);
+					const currentCoins = Math.max(currentCoinsFromMemory, currentCoinsFromStorage);
+					
+					// Calcular nuevas monedas
+					const newCoins = currentCoins + coinsEarned;
+					
+					// Actualizar en ambos lugares
+					memoryState.currentUserCoins = newCoins;
+					localStorage.setItem('currentUserCoins', newCoins.toString());
+					
+					// Actualizar UI inmediatamente
+					if (coinsLabel) {
+						coinsLabel.textContent = newCoins;
+					}
+					
+					console.log('✅ Respuesta correcta!', {
+						coinsEarned,
+						before: currentCoins,
+						after: newCoins,
+						doublePoints: state.doublePoints
+					});
+					
+					showFeedback(`¡Correcto! +${coinsEarned} monedas`);
+					
+					// Intentar sincronizar con el servidor (en background)
+					// IMPORTANTE: No sobrescribir si el valor local es mayor (evitar regresiones)
+					if (memoryState.currentUserId) {
+						try {
+							const response = await updateCoins(coinsEarned);
+							if (response?.success && response.coins !== undefined) {
+								// Usar el valor MÁS ALTO entre local y servidor para evitar regresiones
+								const serverCoins = response.coins;
+								const localCoins = memoryState.currentUserCoins;
+								const finalCoins = Math.max(localCoins, serverCoins);
+								
+								memoryState.currentUserCoins = finalCoins;
+								localStorage.setItem('currentUserCoins', finalCoins.toString());
+								if (coinsLabel) {
+									coinsLabel.textContent = finalCoins;
+								}
+								console.log('✅ Monedas sincronizadas con servidor:', {
+									server: serverCoins,
+									local: localCoins,
+									final: finalCoins
+								});
+							}
+						} catch (error) {
+							console.warn('⚠️ No se pudo sincronizar monedas con el servidor:', error);
+							// Ya actualizamos localmente, así que está bien
+						}
+					} else {
+						console.warn('⚠️ No hay currentUserId, monedas solo guardadas localmente');
 					}
 
-					if (socket) {
-						socket.emit('player:answer', {
-							roomCode,
-							correct: true,
-							playerName: window.memoryState.currentUser,
-						});
+					if (state.doublePoints) {
+						state.doublePoints = false;
+						if (doublePointsPill) doublePointsPill.style.display = 'none';
+					}
+
+					// Actualizar score usando API
+					if (window.memoryState.currentUserId) {
+						try {
+							const { updatePlayerScoreAPI } = await import('../services/roomsRealtime.js');
+							await updatePlayerScoreAPI(roomCode, window.memoryState.currentUserId, 100);
+						} catch (error) {
+							console.error('Error updating score:', error);
+						}
 					}
 				} else {
 					clickedBtn.style.border = '3px solid #E34C43';
-
-					if (socket) {
-						socket.emit('player:answer', {
-							roomCode,
-							correct: false,
-							playerName: window.memoryState.currentUser,
-						});
-					}
+					// No se actualiza score para respuestas incorrectas
 				}
 
-				setTimeout(() => {
-					if (currentQuestion < formattedQuestions.length) {
-						window.currentQuestionIndex = currentQuestion + 1;
-						navigateTo('/active', { roomCode });
-					} else {
-						window.currentQuestionIndex = 1;
-						navigateTo('/results', { roomCode });
-					}
-				}, 1500);
+				lockAnswers();
+				// Asegurar que las monedas se guarden antes de navegar
+				if (isCorrect) {
+					// Forzar sincronización final antes de navegar
+					const finalCoins = memoryState.currentUserCoins || parseInt(localStorage.getItem('currentUserCoins') || '0', 10);
+					memoryState.currentUserCoins = finalCoins;
+					localStorage.setItem('currentUserCoins', finalCoins.toString());
+					console.log('💾 Monedas guardadas antes de navegar:', finalCoins);
+				}
+				setTimeout(() => goToNextStep(), 800);
 			});
 		});
-	}, 100);
+
+		startTimer();
+	}, 120);
 }
 
+async function loadInventory() {
+	try {
+		if (!memoryState.currentUserId) {
+			console.log('⚠️ No hay currentUserId, retornando inventario vacío');
+			return [];
+		}
+		
+		console.log(`📥 Cargando inventario para usuario ${memoryState.currentUserId}...`);
+		const response = await makeRequest(`/users/${memoryState.currentUserId}/boosters`, 'GET');
+		
+		console.log('📦 Respuesta del servidor:', response);
+		
+		// El servidor puede retornar el inventario de diferentes formas
+		let inventory = [];
+		if (response?.success && response.inventory) {
+			inventory = response.inventory;
+		} else if (Array.isArray(response)) {
+			inventory = response;
+		} else if (response?.inventory && Array.isArray(response.inventory)) {
+			inventory = response.inventory;
+		}
+		
+		// Validar que cada item tenga quantity
+		inventory = inventory.map(item => ({
+			...item,
+			quantity: item.quantity || 0
+		}));
+		
+		console.log('✅ Inventario procesado:', inventory);
+		console.log('📊 Items con quantity > 0:', inventory.filter(i => i.quantity > 0).map(i => `${i.booster_name}: x${i.quantity}`));
+		
+		// Actualizar memoryState
+		memoryState.inventory = inventory;
+		
+		return inventory;
+	} catch (error) {
+		console.error('❌ Error cargando inventario:', error);
+		// Fallback al inventario de memoryState si existe
+		if (memoryState.inventory && memoryState.inventory.length > 0) {
+			console.log('📦 Usando inventario de memoryState (fallback):', memoryState.inventory);
+			return memoryState.inventory;
+		}
+		return [];
+	}
+}
+
+function formatInventoryList(inventory = []) {
+	if (!inventory || inventory.length === 0) {
+		console.log('⚠️ formatInventoryList: inventario vacío');
+		return [];
+	}
+	
+	const formatted = inventory
+		.map((item) => {
+			const slug = boosterSlugByName[item.booster_name] || item.booster_name?.toLowerCase();
+			const formattedItem = {
+				...item,
+				slug,
+				icon: boosterAssets[slug] || '/assets/images/Group 4.png',
+				description: boosterDescriptions[slug] || '',
+			};
+			console.log(`📦 Formateando: ${item.booster_name} -> quantity: ${item.quantity}, slug: ${slug}`);
+			return formattedItem;
+		})
+		.filter((item) => {
+			const hasQuantity = item.quantity > 0;
+			if (!hasQuantity) {
+				console.log(`❌ Filtrando ${item.booster_name} porque quantity es ${item.quantity}`);
+			}
+			return hasQuantity;
+		});
+	
+	console.log(`✅ Inventario formateado: ${formatted.length} items con quantity > 0`);
+	console.log('📦 Items finales:', formatted.map(i => `${i.booster_name}: x${i.quantity}`));
+	return formatted;
+}
+
+function renderPowerupsBar(list = []) {
+	if (!list || list.length === 0) {
+		return `<div style="padding:12px 16px; margin:0 16px 8px 16px; background:rgba(255,226,138,0.25); border-radius:12px; color:#1e3a8a; font-weight:600; text-align:center;">
+      No tienes potenciadores activos. Visita la tienda para conseguirlos.
+    </div>`;
+	}
+
+	return `
+    <div style="padding:8px 12px; margin-bottom:8px; overflow-x:auto; background:rgba(255,226,138,0.3); -webkit-overflow-scrolling:touch;">
+      <div style="font-weight:bold; color:#1e3a8a; margin-bottom:8px; display:flex; align-items:center; gap:6px; font-size:14px;">
+        ⚡ Potenciadores disponibles
+      </div>
+      <div style="display:flex; gap:10px; min-width:fit-content;">
+        ${list
+					.map(
+						(item) => `
+          <div class="power-card" data-booster-id="${item.booster_id}" data-booster-slug="${item.slug}" style="background:rgba(255,255,255,0.95); padding:8px 10px; border-radius:10px; min-width:140px; max-width:160px; border:2px solid #1e3a8a; display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <img src="${item.icon}" alt="${item.booster_name}" style="width:28px; height:28px; object-fit:contain; flex-shrink:0;">
+              <div style="min-width:0; flex:1;">
+                <div style="font-weight:800; color:#1e3a8a; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.booster_name}</div>
+                <div class="power-qty" style="font-size:12px; color:#666;">x${item.quantity}</div>
+              </div>
+            </div>
+            <button class="use-power" ${item.quantity <= 0 ? 'disabled' : ''} style="margin-top:auto; border:none; border-radius:8px; padding:6px 8px; font-weight:600; background:#11A36B; color:white; cursor:pointer; font-size:12px; width:100%;">
+              Usar ahora
+            </button>
+          </div>`
+					)
+					.join('')}
+      </div>
+    </div>
+  `;
+}
+
+function updatePowerupQuantities(inventory = []) {
+	const map = {};
+	inventory.forEach((item) => {
+		const slug = boosterSlugByName[item.booster_name] || item.booster_name?.toLowerCase();
+		map[slug] = item.quantity;
+	});
+
+	document.querySelectorAll('.power-card').forEach((card) => {
+		const slug = card.getAttribute('data-booster-slug');
+		const qtyEl = card.querySelector('.power-qty');
+		const btn = card.querySelector('.use-power');
+		const qty = map[slug] || 0;
+		if (qtyEl) qtyEl.textContent = `x${qty}`;
+		if (btn) btn.disabled = qty <= 0;
+	});
+}

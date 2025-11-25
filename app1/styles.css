@@ -517,48 +517,116 @@ body {
     animation: fadeIn 0.5s ease-in-out;
 }
 
-@media (max-width: 375px) {
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+@media (max-width: 768px) {
     .main-content {
-        padding: 15px;
+        padding: 16px;
+        padding-top: 90px;
+    }
+    
+    .form-container {
+        padding: 24px;
+    }
+    
+    .form-title {
+        font-size: 28px;
+    }
+    
+    .group4-image {
+        max-width: 280px;
+        width: 100%;
+    }
+    
+    .back-button {
+        top: 16px;
+        left: 16px;
+        width: 36px;
+        height: 36px;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-content {
+        padding: 12px;
         padding-top: 80px;
-    }
-    
-    .logo {
-        max-width: 240px;
-    }
-    
-    .character {
-        width: 100px;
     }
     
     .form-container {
         padding: 20px;
     }
     
-    .form-title { font-size: 26px; }
+    .form-title {
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+    
+    .form-input {
+        padding: 14px;
+        font-size: 15px;
+    }
+    
+    .btn-primary {
+        padding: 14px;
+        font-size: 16px;
+    }
+    
+    .group4-image {
+        max-width: 240px;
+    }
+    
+    .profile-card {
+        padding: 20px;
+    }
+    
+    .profile-picture {
+        width: 100px;
+        height: 100px;
+    }
 }
 
-@media (max-width: 320px) {
+@media (max-width: 375px) {
     .main-content {
         padding: 10px;
         padding-top: 70px;
     }
     
-    .logo {
+    .form-container {
+        padding: 16px;
+    }
+    
+    .form-title {
+        font-size: 22px;
+    }
+    
+    .group4-image {
         max-width: 200px;
     }
     
-    .character {
-        width: 80px;
+    .btn-primary {
+        padding: 12px;
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 320px) {
+    .main-content {
+        padding: 8px;
+        padding-top: 60px;
     }
     
     .form-container {
-        padding: 15px;
+        padding: 12px;
     }
     
-    .form-title { font-size: 22px; }
+    .form-title {
+        font-size: 20px;
+    }
     
-    .btn-primary { padding: 16px; font-size: 18px; }
+    .group4-image {
+        max-width: 180px;
+    }
 }
 
 @media (orientation: landscape) and (max-height: 500px) {
@@ -567,19 +635,20 @@ body {
     }
     
     .logo-section {
-        margin-bottom: 20px;
+        margin-bottom: 15px;
     }
     
-    .character {
-        width: 80px;
-    }
-    
-    .logo {
-        max-width: 200px;
+    .group4-image {
+        max-width: 180px;
     }
     
     .form-container {
-        padding: 20px;
+        padding: 16px;
+    }
+    
+    .form-title {
+        font-size: 22px;
+        margin-bottom: 15px;
     }
 }
 

@@ -22,7 +22,7 @@ export default function renderJoinRoom() {
 		document.getElementById('back-join').addEventListener('click', () => {
 			navigateTo('/main');
 		});
-		document.getElementById('btn-join-room').addEventListener('click', () => {
+		document.getElementById('btn-join-room').addEventListener('click', async () => {
 			const code = (document.getElementById('room-code').value || '').toUpperCase().trim();
 			if (!code) {
 				alert('Ingresa el código');
@@ -30,27 +30,22 @@ export default function renderJoinRoom() {
 			}
 			console.log('Joining room:', code);
 
-			const socket = window.socket;
-
-			socket.off('room:joined');
-			socket.off('room:error');
-
-			socket.once('room:joined', () => {
+			try {
+				const { joinRoomAPI } = await import('../services/roomsRealtime.js');
+				await joinRoomAPI(
+					code,
+					window.memoryState?.currentUserId,
+					window.memoryState?.currentUser || 'Jugador',
+					window.memoryState?.currentUserAvatar,
+					window.memoryState?.currentUserBgColor,
+					false
+				);
 				console.log('Successfully joined room:', code);
 				navigateTo('/lobby', { code });
-			});
-
-			socket.once('room:error', (error) => {
+			} catch (error) {
 				console.error('Room error:', error);
 				alert(error.message || 'Sala no existe');
-			});
-
-			socket.emit('room:join', {
-				code,
-				playerName: window.memoryState?.currentUser || 'Jugador',
-				avatar_url: window.memoryState?.currentUserAvatar,
-				avatar_bg: window.memoryState?.currentUserBgColor,
-			});
+			}
 		});
 	}, 100);
 }

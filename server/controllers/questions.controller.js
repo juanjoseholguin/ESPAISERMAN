@@ -36,33 +36,68 @@ const getQuestionsByCategory = async (req, res) => {
 		const { categoryId } = req.params;
 		console.log('Fetching questions for category:', categoryId);
 
-		let { data, error } = await supabase.from('questions').select('*').eq('category__id', categoryId);
+		const candidateColumns = [
+			'category__id', // columna legacy (doble guion bajo)
+			'category_id', // columna original
+			'category', // texto (por si guardaron el nombre literal)
+		];
 
-		console.log('Supabase response data:', data);
-		console.log('Supabase response count:', data?.length);
-		console.log('Supabase error:', error);
+		// Si el parámetro es numérico, intentamos primero las columnas numéricas
+		const isNumeric = /^\d+$/.test(categoryId);
+		const orderedColumns = isNumeric
+			? ['category__id', 'category_id', 'category']
+			: ['category', 'category__id', 'category_id'];
 
-		if (error && error.message.includes('does not exist')) {
-			console.log('category__id column does not exist, fetching all questions');
-			const { data: allQuestions, error: allError } = await supabase.from('questions').select('*');
+		let questions = [];
+		let lastError = null;
 
+		for (const column of orderedColumns) {
+			if (!candidateColumns.includes(column)) continue;
+
+			const { data, error } = await supabase
+				.from('questions')
+				.select('*')
+				.eq(column, isNumeric && column !== 'category' ? Number(categoryId) : categoryId)
+				.order('id', { ascending: true });
+
+			if (error) {
+				// Si la columna no existe, seguimos con la siguiente
+				if (error.message?.includes('column') && error.message?.includes('does not exist')) {
+					console.warn(`Column ${column} does not exist in questions table`);
+					continue;
+				}
+				lastError = error;
+				break;
+			}
+
+			if (Array.isArray(data) && data.length > 0) {
+				console.log(`Found ${data.length} questions using column ${column}`);
+				questions = data;
+				break;
+			}
+		}
+
+		if (lastError) {
+			console.error('Supabase error details:', lastError);
+			return res
+				.status(500)
+				.json({ error: 'Error obteniendo preguntas por categoría', details: lastError.message });
+		}
+
+		// Si no encontramos nada con los filtros, devolvemos todas para no bloquear al usuario
+		if (questions.length === 0) {
+			const { data: allQuestions, error: allError } = await supabase.from('questions').select('*').order('id');
 			if (allError) {
 				console.error('Error fetching all questions:', allError);
 				return res.status(500).json({ error: 'Error obteniendo preguntas', details: allError.message });
 			}
-
-			console.log(`Found ${allQuestions?.length || 0} total questions`);
-			console.log('Sample question:', allQuestions?.[0]);
-
-			data = allQuestions || [];
+			console.warn(
+				`No questions matched category ${categoryId}. Returning all (${allQuestions?.length || 0}) questions instead.`
+			);
+			questions = allQuestions || [];
 		}
 
-		if (error && !error.message.includes('does not exist')) {
-			console.error('Supabase error details:', error);
-			return res.status(500).json({ error: 'Error obteniendo preguntas por categoría', details: error.message });
-		}
-
-		res.json(data || []);
+		res.json(questions);
 	} catch (error) {
 		console.error('Error getting questions by category:', error);
 		res.status(500).json({ error: 'Error interno del servidor', details: error.message });

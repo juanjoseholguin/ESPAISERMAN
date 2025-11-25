@@ -11,7 +11,10 @@ window.socket = socket;
 
 const memoryState = {
   rooms: new Map(),
+  currentUserId: null,
   currentUser: null,
+  currentUserCoins: 0,
+  inventory: [],
   currentUserAvatar: null,
   currentUserBgColor: null,
   roomCode: null,
@@ -27,8 +30,12 @@ function clearScripts() {
 
 let route = { path: "/", data: {} };
 const savedUser = localStorage.getItem('currentUser');
-if (savedUser) {
+const savedUserId = localStorage.getItem('currentUserId');
+const savedCoins = localStorage.getItem('currentUserCoins');
+if (savedUser && savedUserId) {
   memoryState.currentUser = savedUser;
+  memoryState.currentUserId = parseInt(savedUserId, 10);
+  memoryState.currentUserCoins = parseInt(savedCoins ?? "0", 10);
   route = { path: "/create", data: {} };
 }
 renderRoute(route);
@@ -81,15 +88,20 @@ function generateRoomCode() {
   return code;
 }
 
-async function makeRequest(url, method, body) {
+async function makeRequest(url, method = "GET", body) {
   const BASE_URL = "http://localhost:5050";
-  let response = await fetch(`${BASE_URL}${url}`, {
-    method: method,
+  const options = {
+    method,
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(body),
-  });
+  };
+
+  if (body !== undefined) {
+    options.body = JSON.stringify(body);
+  }
+
+  let response = await fetch(`${BASE_URL}${url}`, options);
   response = await response.json();
   return response;
 }
