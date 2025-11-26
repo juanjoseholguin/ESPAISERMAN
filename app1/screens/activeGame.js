@@ -9,7 +9,6 @@ import {
 	setCustomPoints,
 } from '../services/geolocation.service.js';
 
-// Función para calcular distancia (Haversine)
 function calculateDistance(lat1, lon1, lat2, lon2) {
 	const R = 6371e3;
 	const φ1 = (lat1 * Math.PI) / 180;
@@ -21,7 +20,6 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 	return R * c;
 }
 
-// Función para suscribirse a cambios en el inventario usando Supabase Realtime
 function setupInventoryRealtime(userId) {
   if (typeof window.supabase === 'undefined' && typeof supabase === 'undefined') {
     console.warn('Supabase no está disponible para Realtime. Asegúrate de incluir el script en index.html');
@@ -36,7 +34,6 @@ function setupInventoryRealtime(userId) {
     return null;
   }
 
-  // Usar la función createClient de Supabase
   const supabaseLib = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
   if (!supabaseLib || !supabaseLib.createClient) {
     console.warn('⚠️ Supabase createClient no está disponible');
@@ -64,7 +61,6 @@ function setupInventoryRealtime(userId) {
             memoryState.inventory = response.inventory;
             console.log('✅ Inventario actualizado en juego:', memoryState.inventory);
 
-            // Actualizar la barra de potenciadores si existe
             const inventoryResponse = memoryState.inventory;
             const formattedInventory = formatInventoryList(inventoryResponse);
             const powerupsBanner = renderPowerupsBar(formattedInventory);
@@ -113,7 +109,6 @@ function renderIntermedioWithGeolocation({ app, roomCode, currentQuestion, total
 	let distanceToPoint = null;
 	let currentLocation = null;
 
-	// Renderizar pantalla intermedia inicial
 	app.innerHTML = renderIntermedioScreen({
 		roomCode,
 		currentQuestion,
@@ -125,24 +120,20 @@ function renderIntermedioWithGeolocation({ app, roomCode, currentQuestion, total
 		distanceToPoint: null,
 	});
 
-	// Establecer puntos personalizados si están disponibles
 	if (window.roomMapPoints && Array.isArray(window.roomMapPoints)) {
 		setCustomPoints(window.roomMapPoints);
 		console.log('📍 Usando puntos personalizados del mapa:', window.roomMapPoints);
 	}
 
-	// Iniciar geolocalización
 	const playerNameForGeo = memoryState.currentUser || 'Jugador';
 	console.log('📍 Iniciando geolocalización para:', { roomCode, playerName: playerNameForGeo });
 
-	// Pequeño delay para asegurar que el DOM esté listo
 	setTimeout(() => {
 		initGeolocation(roomCode, playerNameForGeo);
 		window.geolocationActive = true;
 		console.log('✅ Geolocalización iniciada');
 	}, 500);
 
-	// Inicializar mapa del jugador
 	let playerMap = null;
 	let playerMarker = null;
 	let questionMarkers = [];
@@ -157,7 +148,6 @@ function renderIntermedioWithGeolocation({ app, roomCode, currentQuestion, total
 		const mapDiv = document.getElementById('player-map');
 		if (!mapDiv || !window.L) return;
 
-		// Obtener puntos
 		const points = window.roomMapPoints && Array.isArray(window.roomMapPoints)
 			? window.roomMapPoints
 			: getPoints();
@@ -177,7 +167,6 @@ function renderIntermedioWithGeolocation({ app, roomCode, currentQuestion, total
 			attribution: '© OpenStreetMap contributors',
 		}).addTo(playerMap);
 
-		// Agregar marcadores de preguntas
 		points.forEach((point, idx) => {
 			const isCurrentQuestion = point.questionNumber === currentQuestionNum;
 			const iconColor = isCurrentQuestion ? '#8B5CF6' : '#FFE28A';
@@ -205,12 +194,10 @@ function renderIntermedioWithGeolocation({ app, roomCode, currentQuestion, total
 	function updatePlayerLocationOnMap(latitude, longitude) {
 		if (!playerMap || !window.L) return;
 
-		// Eliminar marcador anterior si existe
 		if (playerMarker) {
 			playerMap.removeLayer(playerMarker);
 		}
 
-		// Agregar nuevo marcador del jugador
 		const playerIcon = L.divIcon({
 			className: 'player-location-marker',
 			html: `<div style="background-color: #11A36B; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.4);"><span style="color: white; font-weight: bold; font-size: 16px;">👤</span></div>`,
@@ -225,11 +212,9 @@ function renderIntermedioWithGeolocation({ app, roomCode, currentQuestion, total
 			</div>
 		`);
 
-		// Centrar mapa en la ubicación del jugador
 		playerMap.setView([latitude, longitude], 17);
 	}
 
-	// Configurar callback de proximidad
 	onProximityChange(({ isNearPoint, nearestPoint, distance }) => {
 		const expectedQuestionNumber = currentQuestion;
 		const isCorrectPoint = nearestPoint && nearestPoint.questionNumber === expectedQuestionNumber;
@@ -239,18 +224,15 @@ function renderIntermedioWithGeolocation({ app, roomCode, currentQuestion, total
 			distanceToPoint = distance;
 		} else {
 			isButtonEnabled = false;
-			// Mostrar distancia al siguiente punto (pregunta actual)
 			if (nearestPoint && nearestPoint.questionNumber === expectedQuestionNumber) {
 				distanceToPoint = distance;
 			} else {
-				// Calcular distancia al siguiente punto (pregunta actual)
 				const points = window.roomMapPoints && Array.isArray(window.roomMapPoints)
 					? window.roomMapPoints
 					: getPoints();
 				const targetPoint = points.find(p => p.questionNumber === expectedQuestionNumber);
 
 				if (targetPoint && currentLocation && currentLocation.latitude && currentLocation.longitude) {
-					// Calcular distancia al punto objetivo
 					distanceToPoint = calculateDistance(
 						currentLocation.latitude,
 						currentLocation.longitude,
@@ -258,13 +240,11 @@ function renderIntermedioWithGeolocation({ app, roomCode, currentQuestion, total
 						targetPoint.coords[1]
 					);
 				} else if (distance !== null) {
-					// Usar la distancia del punto más cercano como referencia
 					distanceToPoint = distance;
 				}
 			}
 		}
 
-		// Actualizar UI
 		const btn = document.getElementById('btn-answer-question');
 		const distanceMessageEl = document.getElementById('distance-message');
 
@@ -303,13 +283,11 @@ function renderIntermedioWithGeolocation({ app, roomCode, currentQuestion, total
 			}
 		}
 
-		// Actualizar ubicación en el mapa si tenemos coordenadas
 		if (currentLocation && currentLocation.latitude && currentLocation.longitude) {
 			updatePlayerLocationOnMap(currentLocation.latitude, currentLocation.longitude);
 		}
 	});
 
-	// Suscribirse a actualizaciones de ubicación
 	onLocationUpdate((location) => {
 		currentLocation = location;
 		if (location && location.latitude && location.longitude) {
@@ -317,21 +295,17 @@ function renderIntermedioWithGeolocation({ app, roomCode, currentQuestion, total
 		}
 	});
 
-	// Configurar botones
 	setTimeout(() => {
 		const btn = document.getElementById('btn-answer-question');
 		if (btn) {
 			btn.addEventListener('click', () => {
 				if (!isButtonEnabled) return;
 
-				// Detener geolocalización temporalmente
 				stopGeolocation();
 				window.geolocationActive = false;
 
-				// Marcar que estamos mostrando la pregunta
 				window.showingQuestion = true;
 
-				// Renderizar la pregunta
 				renderQuestionScreen({
 					app,
 					roomCode,
@@ -343,7 +317,6 @@ function renderIntermedioWithGeolocation({ app, roomCode, currentQuestion, total
 			});
 		}
 
-		// Botón para activar ubicación manualmente
 		const locationBtn = document.getElementById('btn-enable-location');
 		if (locationBtn) {
 			locationBtn.addEventListener('click', () => {
@@ -362,7 +335,6 @@ function renderIntermedioWithGeolocation({ app, roomCode, currentQuestion, total
 }
 
 function renderIntermedioScreen({ roomCode, currentQuestion, totalQuestions, formattedInventory, playerName, playerScore, isButtonEnabled = false, distanceToPoint = null }) {
-	// Usar puntos personalizados si están disponibles, sino usar los por defecto
 	const points = window.roomMapPoints && Array.isArray(window.roomMapPoints)
 		? window.roomMapPoints
 		: getPoints();
@@ -432,16 +404,13 @@ export default async function renderActiveGame({ roomCode } = {}) {
     </div>`;
 	const currentQuestion = window.currentQuestionIndex || 1;
 
-	// Obtener información de la sala para cargar las preguntas
 	let questions = window.roomQuestions || [];
 	let timePerQuestion = window.roomTimePerQuestion || 30;
 	let roomCategory = null;
 
-	// Si no hay preguntas, intentar obtenerlas desde el servidor usando el roomCode
 	if (questions.length === 0 && roomCode) {
 		console.log('📥 No hay preguntas en window.roomQuestions, obteniendo desde el servidor...');
 		try {
-			// Obtener información de la sala
 			const roomResponse = await fetch(`${window.location.origin}/rooms/${roomCode}`);
 			if (roomResponse.ok) {
 				const roomData = await roomResponse.json();
@@ -450,12 +419,10 @@ export default async function renderActiveGame({ roomCode } = {}) {
 
 				console.log(`✅ Sala encontrada, categoría: ${roomCategory}, tiempo: ${timePerQuestion}`);
 
-				// Obtener preguntas de la categoría
 				if (roomCategory) {
 					const questionsResponse = await fetch(`${window.location.origin}/questions/category/${roomCategory}`);
 					if (questionsResponse.ok) {
 						const allQuestions = await questionsResponse.json();
-						// Tomar las primeras 5 preguntas (igual que el moderador)
 						questions = Array.isArray(allQuestions) ? allQuestions.slice(0, 5) : [];
 						console.log(`✅ ${questions.length} preguntas cargadas desde el servidor`);
 					}
@@ -477,7 +444,6 @@ export default async function renderActiveGame({ roomCode } = {}) {
 		return;
 	}
 
-	// Guardar las preguntas y tiempo en window para uso posterior
 	window.roomQuestions = questions;
 	window.roomTimePerQuestion = timePerQuestion;
 
@@ -509,37 +475,31 @@ export default async function renderActiveGame({ roomCode } = {}) {
 
 	const question = formattedQuestions[currentQuestion - 1];
 
-	// Limpiar geolocalización anterior si existe
 	if (window.geolocationActive) {
 		stopGeolocation();
 	}
 
-	// Limpiar suscripción anterior si existe
 	if (window.inventoryGameChannel) {
 		window.inventoryGameChannel.unsubscribe();
 	}
 
-	// SIEMPRE cargar el inventario desde el servidor para asegurar datos actualizados
 	let inventoryResponse = [];
 	try {
 		inventoryResponse = await loadInventory();
 		console.log('🎮 Inventario cargado del servidor:', inventoryResponse);
 		console.log('🎮 Detalles:', inventoryResponse.map(i => `${i.booster_name}: x${i.quantity || 0}`));
 
-		// Actualizar memoryState con el inventario cargado
 		if (inventoryResponse && inventoryResponse.length > 0) {
 			memoryState.inventory = inventoryResponse;
 		}
 	} catch (error) {
 		console.error('Error cargando inventario:', error);
-		// Fallback a memoryState si hay error
 		if (memoryState.inventory && memoryState.inventory.length > 0) {
 			inventoryResponse = memoryState.inventory;
 			console.log('⚠️ Usando inventario de memoryState (fallback):', inventoryResponse);
 		}
 	}
 
-	// Configurar Realtime para actualizar inventario durante el juego
 	if (memoryState.currentUserId) {
 		window.inventoryGameChannel = setupInventoryRealtime(memoryState.currentUserId);
 	}
@@ -547,12 +507,9 @@ export default async function renderActiveGame({ roomCode } = {}) {
 	const formattedInventory = formatInventoryList(inventoryResponse);
 	console.log('🎮 Inventario formateado:', formattedInventory);
 
-	// Verificar si debemos mostrar la pantalla intermedia o la pregunta
-	// Por defecto, mostrar la pantalla intermedia (excepto si ya estamos mostrando una pregunta)
 	const showIntermedio = window.showingQuestion !== true;
 
 	if (showIntermedio) {
-		// Mostrar pantalla intermedia con geolocalización
 		renderIntermedioWithGeolocation({
 			app,
 			roomCode,
@@ -567,7 +524,6 @@ export default async function renderActiveGame({ roomCode } = {}) {
 		return;
 	}
 
-	// Si estamos aquí, mostrar la pregunta
 	renderQuestionScreen({
 		app,
 		roomCode,
@@ -581,7 +537,6 @@ export default async function renderActiveGame({ roomCode } = {}) {
 function renderQuestionScreen({ app, roomCode, currentQuestion, formattedQuestions, timePerQuestion, formattedInventory }) {
 	const question = formattedQuestions[currentQuestion - 1];
 
-	// Usar puntos personalizados si están disponibles, sino usar los por defecto
 	const points = window.roomMapPoints && Array.isArray(window.roomMapPoints)
 		? window.roomMapPoints
 		: getPoints();
@@ -689,9 +644,7 @@ function renderQuestionScreen({ app, roomCode, currentQuestion, formattedQuestio
 		const doublePointsPill = document.getElementById('double-points-pill');
 		const answerButtons = Array.from(document.querySelectorAll('.answer-btn'));
 
-		// Asegurar que las monedas estén inicializadas correctamente
 		const savedCoins = parseInt(localStorage.getItem('currentUserCoins') || '0', 10);
-		// Siempre usar el valor más alto entre memoryState y localStorage
 		const currentCoins = Math.max(
 			memoryState.currentUserCoins || 0,
 			savedCoins || 0
@@ -699,7 +652,6 @@ function renderQuestionScreen({ app, roomCode, currentQuestion, formattedQuestio
 		memoryState.currentUserCoins = currentCoins;
 		localStorage.setItem('currentUserCoins', currentCoins.toString());
 
-		// Sincronizar siempre con localStorage para mantener consistencia
 		if (coinsLabel) {
 			coinsLabel.textContent = currentCoins;
 		}
@@ -857,19 +809,15 @@ function renderQuestionScreen({ app, roomCode, currentQuestion, formattedQuestio
 					clickedBtn.style.border = '3px solid #11A36B';
 					const coinsEarned = state.doublePoints ? 200 : 100;
 
-					// Obtener monedas actuales desde múltiples fuentes para asegurar consistencia
 					const currentCoinsFromMemory = memoryState.currentUserCoins || 0;
 					const currentCoinsFromStorage = parseInt(localStorage.getItem('currentUserCoins') || '0', 10);
 					const currentCoins = Math.max(currentCoinsFromMemory, currentCoinsFromStorage);
 
-					// Calcular nuevas monedas
 					const newCoins = currentCoins + coinsEarned;
 
-					// Actualizar en ambos lugares
 					memoryState.currentUserCoins = newCoins;
 					localStorage.setItem('currentUserCoins', newCoins.toString());
 
-					// Actualizar UI inmediatamente
 					if (coinsLabel) {
 						coinsLabel.textContent = newCoins;
 					}
@@ -883,13 +831,10 @@ function renderQuestionScreen({ app, roomCode, currentQuestion, formattedQuestio
 
 					showFeedback(`¡Correcto! +${coinsEarned} monedas`);
 
-					// Intentar sincronizar con el servidor (en background)
-					// IMPORTANTE: No sobrescribir si el valor local es mayor (evitar regresiones)
 					if (memoryState.currentUserId) {
 						try {
 							const response = await updateCoins(coinsEarned);
 							if (response?.success && response.coins !== undefined) {
-								// Usar el valor MÁS ALTO entre local y servidor para evitar regresiones
 								const serverCoins = response.coins;
 								const localCoins = memoryState.currentUserCoins;
 								const finalCoins = Math.max(localCoins, serverCoins);
@@ -907,7 +852,6 @@ function renderQuestionScreen({ app, roomCode, currentQuestion, formattedQuestio
 							}
 						} catch (error) {
 							console.warn('⚠️ No se pudo sincronizar monedas con el servidor:', error);
-							// Ya actualizamos localmente, así que está bien
 						}
 					} else {
 						console.warn('⚠️ No hay currentUserId, monedas solo guardadas localmente');
@@ -918,7 +862,6 @@ function renderQuestionScreen({ app, roomCode, currentQuestion, formattedQuestio
 						if (doublePointsPill) doublePointsPill.style.display = 'none';
 					}
 
-					// Actualizar score usando API
 					if (window.memoryState.currentUserId) {
 						try {
 							const { updatePlayerScoreAPI } = await import('../services/roomsRealtime.js');
@@ -929,13 +872,10 @@ function renderQuestionScreen({ app, roomCode, currentQuestion, formattedQuestio
 					}
 				} else {
 					clickedBtn.style.border = '3px solid #E34C43';
-					// No se actualiza score para respuestas incorrectas
 				}
 
 				lockAnswers();
-				// Asegurar que las monedas se guarden antes de navegar
 				if (isCorrect) {
-					// Forzar sincronización final antes de navegar
 					const finalCoins = memoryState.currentUserCoins || parseInt(localStorage.getItem('currentUserCoins') || '0', 10);
 					memoryState.currentUserCoins = finalCoins;
 					localStorage.setItem('currentUserCoins', finalCoins.toString());
@@ -961,7 +901,6 @@ async function loadInventory() {
 
 		console.log('📦 Respuesta del servidor:', response);
 
-		// El servidor puede retornar el inventario de diferentes formas
 		let inventory = [];
 		if (response?.success && response.inventory) {
 			inventory = response.inventory;
@@ -971,7 +910,6 @@ async function loadInventory() {
 			inventory = response.inventory;
 		}
 
-		// Validar que cada item tenga quantity
 		inventory = inventory.map(item => ({
 			...item,
 			quantity: item.quantity || 0
@@ -980,13 +918,11 @@ async function loadInventory() {
 		console.log('✅ Inventario procesado:', inventory);
 		console.log('📊 Items con quantity > 0:', inventory.filter(i => i.quantity > 0).map(i => `${i.booster_name}: x${i.quantity}`));
 
-		// Actualizar memoryState
 		memoryState.inventory = inventory;
 
 		return inventory;
 	} catch (error) {
 		console.error('❌ Error cargando inventario:', error);
-		// Fallback al inventario de memoryState si existe
 		if (memoryState.inventory && memoryState.inventory.length > 0) {
 			console.log('📦 Usando inventario de memoryState (fallback):', memoryState.inventory);
 			return memoryState.inventory;

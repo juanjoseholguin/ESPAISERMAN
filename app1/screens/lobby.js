@@ -47,7 +47,6 @@ export default async function renderLobby({ code } = {}) {
 			li.style.padding = '8px 0';
 			li.style.borderBottom = idx < uniquePlayers.length - 1 ? '1px solid rgba(0,0,0,0.1)' : 'none';
 			li.style.fontSize = '16px';
-			// Usar player_name si existe, sino name
 			const playerName = p.player_name || p.name || 'Jugador';
 			li.innerHTML = `${idx + 1}. ${playerName}`;
 			list.appendChild(li);
@@ -55,7 +54,6 @@ export default async function renderLobby({ code } = {}) {
 		const codeEl = document.getElementById('lobby-code');
 		if (codeEl && state.code) codeEl.textContent = state.code;
 
-		// Actualizar mensaje de espera
 		const waitingMsg = document.getElementById('waiting-message');
 		if (waitingMsg) {
 			if (state.room_status) {
@@ -67,12 +65,10 @@ export default async function renderLobby({ code } = {}) {
 			}
 		}
 
-		// Cargar puntos personalizados si están disponibles
 		if (state.map_points && Array.isArray(state.map_points) && state.map_points.length > 0) {
 			window.roomMapPoints = state.map_points;
 			console.log('📍 Puntos personalizados cargados:', window.roomMapPoints);
 		} else if (!window.roomMapPoints) {
-			// Usar puntos por defecto si no hay personalizados
 			window.roomMapPoints = [
 				{ name: 'Edificio A', coords: [3.3435, -76.533], questionNumber: 1 },
 				{ name: 'Biblioteca', coords: [3.3438, -76.5332], questionNumber: 2 },
@@ -82,21 +78,17 @@ export default async function renderLobby({ code } = {}) {
 			];
 		}
 
-		// Verificar si la sala inició (los jugadores no necesitan roomQuestions, solo verificar room_status)
 		if (state.room_status) {
 			console.log('🎮 Game started, navigating to active game');
 			if (subscription) subscription.unsubscribe();
-			// Pequeño delay para que el usuario vea el mensaje de "iniciando"
 			setTimeout(() => {
 				navigateTo('/active', { roomCode: code });
 			}, 500);
 		}
 	}
 
-	// Cargar estado inicial
 	const { subscribeToRoom, loadRoomState } = await import('../services/roomsRealtime.js');
 
-	// Función para recargar el estado
 	const reloadRoomState = async () => {
 		console.log(`🔄 Reloading room state for: ${code}`);
 		const state = await loadRoomState(code);
@@ -108,40 +100,32 @@ export default async function renderLobby({ code } = {}) {
 		}
 	};
 
-	// Cargar estado inicial
 	if (code) {
 		await reloadRoomState();
 	}
 
-	// Suscribirse a cambios en tiempo real
 	if (code) {
 		subscription = subscribeToRoom(code, async (state) => {
 			console.log('🔄 Cambio detectado en sala, recargando estado...');
-			// Recargar el estado completo cuando hay cambios
 			const updatedState = await reloadRoomState();
 
-			// Si la sala se inicia (room_status cambia a true), navegar automáticamente
 			if (updatedState && updatedState.room_status) {
 				console.log('🎮 Room started detected via Realtime, navigating to active game');
-				// Actualizar mensaje antes de navegar
 				const waitingMsg = document.getElementById('waiting-message');
 				if (waitingMsg) {
 					waitingMsg.textContent = '¡La partida está iniciando...!';
 					waitingMsg.style.color = '#11A36B';
 				}
 				if (subscription) subscription.unsubscribe();
-				// Guardar información de la sala antes de navegar
 				const roomState = await reloadRoomState();
 				if (roomState) {
 					window.roomTimePerQuestion = roomState.timePerQuestion;
 					window.roomCategory = roomState.category;
 
-					// Cargar puntos personalizados desde la base de datos
 					if (roomState.map_points && Array.isArray(roomState.map_points) && roomState.map_points.length > 0) {
 						window.roomMapPoints = roomState.map_points;
 						console.log('📍 Puntos personalizados cargados desde la base de datos:', window.roomMapPoints);
 					} else {
-						// Usar puntos por defecto si no hay personalizados
 						window.roomMapPoints = [
 							{ name: 'Edificio A', coords: [3.3435, -76.533], questionNumber: 1 },
 							{ name: 'Biblioteca', coords: [3.3438, -76.5332], questionNumber: 2 },
@@ -153,7 +137,6 @@ export default async function renderLobby({ code } = {}) {
 					}
 				}
 
-				// Pequeño delay para que el usuario vea el mensaje de "iniciando"
 				setTimeout(() => {
 					navigateTo('/active', { roomCode: code });
 				}, 500);
@@ -185,8 +168,6 @@ export default async function renderLobby({ code } = {}) {
 				);
 				console.log('✅ Successfully joined room:', result);
 
-				// Recargar el estado después de unirse para ver el jugador en la lista
-				// Esperar un poco más para que Supabase procese el INSERT
 				setTimeout(async () => {
 					console.log('🔄 Recargando estado después de unirse...');
 					await reloadRoomState();

@@ -136,9 +136,9 @@ export default function renderLoginRegister() {
     const identifier = document.getElementById("login-username").value?.trim();
     const password = document.getElementById("login-password").value;
 
-    if (!identifier || !password) { 
-      alert("Por favor completa todos los campos"); 
-      return; 
+    if (!identifier || !password) {
+      alert("Por favor completa todos los campos");
+      return;
     }
 
     try {
@@ -160,17 +160,17 @@ export default function renderLoginRegister() {
     const email = document.getElementById("register-email").value?.trim();
     const password = document.getElementById("register-password").value;
     const confirmPassword = document.getElementById("register-confirm-password").value;
-    
+
     if (!name || !email || !password || !confirmPassword) {
       alert("Por favor completa todos los campos");
       return;
     }
-    
+
     if (password !== confirmPassword) {
       alert("Las contraseñas no coinciden");
       return;
     }
-    
+
     try {
       const response = await makeRequest("/auth/register", "POST", {
         name,

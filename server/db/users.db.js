@@ -57,7 +57,7 @@ const getUserById = async (userId) => {
 const createUserInDB = async (user) => {
   const colors = ['#F9D648', '#8FA6E0', '#11A36B', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7'];
   const randomColor = colors[Math.floor(Math.random() * colors.length)];
-  
+
   const { data, error } = await supabaseCli
     .from("users")
     .insert([{
@@ -151,7 +151,6 @@ const changeUserCoins = async (userId, delta) => {
     return { error: error.message };
   }
 
-  // Verificar que el valor se actualizó correctamente
   const updatedCoins = data?.[0]?.["espaiser-coin"] ?? newCoins;
   console.log(`✅ Coins updated in DB: ${updatedCoins}`);
 

@@ -1,7 +1,5 @@
-// Servicio para manejar rooms con Supabase Realtime (app2)
 import { getSupabaseClient } from './supabaseClient.js';
 
-// Suscribirse a cambios en una sala (players_room y admin_room)
 export function subscribeToRoom(roomPin, onRoomUpdate) {
   const supabase = getSupabaseClient();
   if (!supabase) {
@@ -9,7 +7,6 @@ export function subscribeToRoom(roomPin, onRoomUpdate) {
     return null;
   }
 
-  // Suscribirse a cambios en players_room
   const playersChannel = supabase
     .channel(`room-players-${roomPin}`)
     .on(
@@ -22,13 +19,11 @@ export function subscribeToRoom(roomPin, onRoomUpdate) {
       },
       (payload) => {
         console.log('🔄 Cambio en players_room:', payload);
-        // Recargar el estado completo de la sala
         loadRoomState(roomPin).then(onRoomUpdate);
       }
     )
     .subscribe();
 
-  // Suscribirse a cambios en admin_room
   const adminChannel = supabase
     .channel(`room-admin-${roomPin}`)
     .on(
@@ -41,7 +36,6 @@ export function subscribeToRoom(roomPin, onRoomUpdate) {
       },
       (payload) => {
         console.log('🔄 Cambio en admin_room:', payload);
-        // Recargar el estado completo de la sala
         loadRoomState(roomPin).then(onRoomUpdate);
       }
     )
@@ -55,7 +49,6 @@ export function subscribeToRoom(roomPin, onRoomUpdate) {
   };
 }
 
-// Cargar el estado completo de una sala
 export async function loadRoomState(roomPin) {
   try {
     const response = await fetch(`${window.location.origin}/rooms/${roomPin}/players`);
@@ -75,14 +68,13 @@ export async function loadRoomState(roomPin) {
 
     console.log('✅ Room state loaded (app2):', roomData);
 
-    // Transformar el formato para compatibilidad con el código existente
     const transformedState = {
       code: roomData.room_pin || roomPin,
       players: (roomData.players || []).map(p => ({
         id: p.user_id,
-        user_id: p.user_id, // Agregar también user_id para compatibilidad
+        user_id: p.user_id,
         name: p.player_name || p.name || 'Jugador',
-        player_name: p.player_name || p.name || 'Jugador', // Agregar también player_name
+        player_name: p.player_name || p.name || 'Jugador',
         avatar_url: p.avatar_url,
         avatar_bg: p.avatar_bg,
         score: p.score || 0
@@ -92,14 +84,13 @@ export async function loadRoomState(roomPin) {
       maxParticipants: roomData.room_size,
       timePerQuestion: roomData.time_per_question,
       room_status: roomData.room_status || false,
-      map_points: roomData.map_points || null // Incluir puntos personalizados del mapa
+      map_points: roomData.map_points || null
     };
 
     console.log('✅ Transformed room state (app2):', transformedState);
     return transformedState;
   } catch (error) {
     console.error('Error loading room state:', error);
-    // Retornar un estado vacío en lugar de null
     return {
       code: roomPin,
       players: [],
@@ -108,7 +99,6 @@ export async function loadRoomState(roomPin) {
   }
 }
 
-// Crear una sala
 export async function createRoomAPI(adminUserId, categoryId, maxParticipants, timePerQuestion, mapPoints = null) {
   try {
     console.log('📤 Creating room via API:', { adminUserId, categoryId, maxParticipants, timePerQuestion, mapPointsCount: mapPoints?.length || 0 });
@@ -140,7 +130,6 @@ export async function createRoomAPI(adminUserId, categoryId, maxParticipants, ti
   }
 }
 
-// Unirse a una sala
 export async function joinRoomAPI(roomPin, userId, playerName, avatarUrl, avatarBg, isModerator = false) {
   try {
     const response = await fetch(`${window.location.origin}/rooms/${roomPin}/join`, {
@@ -167,7 +156,6 @@ export async function joinRoomAPI(roomPin, userId, playerName, avatarUrl, avatar
   }
 }
 
-// Iniciar una sala
 export async function startRoomAPI(roomPin, adminUserId) {
   try {
     const response = await fetch(`${window.location.origin}/rooms/${roomPin}/start`, {
@@ -188,7 +176,6 @@ export async function startRoomAPI(roomPin, adminUserId) {
   }
 }
 
-// Obtener resultados de una sala
 export async function getRoomResultsAPI(roomPin) {
   try {
     const response = await fetch(`${window.location.origin}/rooms/${roomPin}/results`);

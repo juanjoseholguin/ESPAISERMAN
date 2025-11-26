@@ -9,7 +9,6 @@ const {
   leaveRoom
 } = require('../db/rooms.db');
 
-// Crear una sala
 const createRoomController = async (req, res) => {
   try {
     const { adminUserId, categoryId, maxParticipants, timePerQuestion, mapPoints } = req.body;
@@ -35,7 +34,6 @@ const createRoomController = async (req, res) => {
   }
 };
 
-// Obtener sala por PIN
 const getRoomByPinController = async (req, res) => {
   try {
     const { roomPin } = req.params;
@@ -52,7 +50,6 @@ const getRoomByPinController = async (req, res) => {
   }
 };
 
-// Obtener sala con jugadores
 const getRoomWithPlayersController = async (req, res) => {
   try {
     const { roomPin } = req.params;
@@ -73,7 +70,6 @@ const getRoomWithPlayersController = async (req, res) => {
   }
 };
 
-// Unirse a una sala
 const joinRoomController = async (req, res) => {
   try {
     const { roomPin } = req.params;
@@ -100,7 +96,6 @@ const joinRoomController = async (req, res) => {
   }
 };
 
-// Actualizar score de un jugador
 const updatePlayerScoreController = async (req, res) => {
   try {
     const { roomPin, userId } = req.params;
@@ -123,7 +118,6 @@ const updatePlayerScoreController = async (req, res) => {
   }
 };
 
-// Iniciar sala
 const startRoomController = async (req, res) => {
   try {
     const { roomPin } = req.params;
@@ -146,7 +140,6 @@ const startRoomController = async (req, res) => {
   }
 };
 
-// Obtener resultados de una sala
 const getRoomResultsController = async (req, res) => {
   try {
     const { roomPin } = req.params;
@@ -163,7 +156,6 @@ const getRoomResultsController = async (req, res) => {
   }
 };
 
-// Salir de una sala
 const leaveRoomController = async (req, res) => {
   try {
     const { roomPin, userId } = req.params;

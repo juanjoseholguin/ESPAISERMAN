@@ -47,18 +47,18 @@ const createUser = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const userData = { 
-      name: name || username, 
+    const userData = {
+      name: name || username,
       username: username || name,
       email,
       password: hashedPassword,
     };
     const response = await createUserInDB(userData);
-    
+
     if (response.error) {
       return res.status(400).json(response);
     }
-    
+
     res.json({ success: true, user: sanitizeUser(response[0]) });
   } catch (error) {
     console.error("Error in createUser:", error);
@@ -107,7 +107,7 @@ const updateUser = async (req, res) => {
   try {
     const { name, email, username, avatar_url, avatar_bg } = req.body;
     const { id: userId } = req.params;
-    const updateData = { 
+    const updateData = {
       username: name || username,
       email,
     };
@@ -116,11 +116,11 @@ const updateUser = async (req, res) => {
     if (avatar_bg) updateData.avatar_bg = avatar_bg;
 
     const response = await updateUserInDb(updateData, userId);
-    
+
     if (response.error) {
       return res.status(400).json(response);
     }
-    
+
     res.json({ success: true, user: sanitizeUser(response[0]) });
   } catch (error) {
     console.error("Error in updateUser:", error);
@@ -132,11 +132,11 @@ const deleteUser = async (req, res) => {
   try {
     const { id: userId } = req.params;
     const response = await deleteUserInDb(userId);
-    
+
     if (response.error) {
       return res.status(400).json(response);
     }
-    
+
     res.json({ success: true, message: "User deleted" });
   } catch (error) {
     console.error("Error in deleteUser:", error);

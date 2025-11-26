@@ -19,7 +19,6 @@ export default async function renderGameResults({ roomCode } = {}) {
     </div>
   `;
 
-	// Cargar resultados desde la API
 	let results = [];
 	try {
 		const { getRoomResultsAPI } = await import('../services/roomsRealtime.js');

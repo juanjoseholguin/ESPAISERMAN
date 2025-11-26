@@ -9,7 +9,7 @@ const getCategories = async (req, res) => {
     console.log('Fetching categories from Supabase...');
     console.log('Supabase URL:', supabaseUrl);
     console.log('Supabase Key:', supabaseKey ? 'Present' : 'Missing');
-    
+
     const { data, error } = await supabase
       .from('question_category')
       .select('*')

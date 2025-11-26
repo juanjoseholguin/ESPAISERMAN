@@ -70,20 +70,16 @@ export default async function renderDistributeQuestions({ category, participants
 
 			console.log(`Found ${questions.length} questions for category ${category}`);
 
-			// Obtener cantidad de preguntas seleccionada
 			const numQuestions = parseInt(document.getElementById('num-questions')?.value || '5', 10);
 			const selectedQuestions = Array.isArray(questions) ? questions.slice(0, numQuestions) : [];
 
 			console.log('Selected questions count:', selectedQuestions.length);
 
-			// Crear sala usando API
 			try {
 				const { createRoomAPI } = await import('../services/roomsRealtime.js');
 
-				// Obtener puntos personalizados del mapa (o generar por defecto según cantidad)
 				let mapPoints = window.customMapPoints;
 				if (!mapPoints || mapPoints.length !== numQuestions) {
-					// Generar puntos por defecto si no hay o si la cantidad cambió
 					const defaultNames = [
 						'Edificio A', 'Biblioteca', 'Cafetería', 'Auditorio', 'Laboratorios',
 						'Gimnasio', 'Parqueadero', 'Oficinas', 'Aulas', 'Comedor'
@@ -121,11 +117,9 @@ export default async function renderDistributeQuestions({ category, participants
 				window.roomQuestions = selectedQuestions;
 				window.roomTimePerQuestion = timePerQuestion;
 
-				// Guardar puntos personalizados del mapa
 				window.roomMapPoints = mapPoints;
 				console.log(`📍 ${mapPoints.length} puntos guardados:`, window.roomMapPoints);
 
-				// Esperar un momento para que la sala se guarde completamente
 				await new Promise(resolve => setTimeout(resolve, 300));
 
 				navigateTo('/lobby', { code, category, participants, timePerQuestion });
@@ -147,7 +141,6 @@ export default async function renderDistributeQuestions({ category, participants
 		const numQuestions = parseInt(document.getElementById('num-questions')?.value || '5', 10);
 		initMap(category, numQuestions);
 
-		// Escuchar cambios en el selector de cantidad
 		const numQuestionsSelect = document.getElementById('num-questions');
 		if (numQuestionsSelect) {
 			numQuestionsSelect.addEventListener('change', (e) => {
@@ -182,17 +175,14 @@ export default async function renderDistributeQuestions({ category, participants
 	function updateMapPoints(numPoints) {
 		if (!currentMap || !window.L) return;
 
-		// Limpiar marcadores existentes
 		currentMarkers.forEach(marker => {
 			currentMap.removeLayer(marker);
 		});
 		currentMarkers = [];
 
-		// Generar nuevos puntos
 		currentPoints = generateDefaultPoints(numPoints);
 		window.customMapPoints = currentPoints.map(p => ({ ...p }));
 
-		// Agregar nuevos marcadores
 		currentPoints.forEach((point, idx) => {
 			const icon = L.divIcon({
 				className: 'custom-question-marker',
@@ -238,11 +228,9 @@ export default async function renderDistributeQuestions({ category, participants
 			attribution: '© OpenStreetMap contributors',
 		}).addTo(map);
 
-		// Generar puntos iniciales
 		currentPoints = generateDefaultPoints(numQuestions);
 		window.customMapPoints = currentPoints.map(p => ({ ...p }));
 
-		// Agregar marcadores
 		currentPoints.forEach((point, idx) => {
 			const icon = L.divIcon({
 				className: 'custom-question-marker',
@@ -268,7 +256,6 @@ export default async function renderDistributeQuestions({ category, participants
 
 	function setupMarker(marker, point, idx) {
 
-		// Crear popup con input para editar nombre
 		const popupContent = document.createElement('div');
 		popupContent.style.cssText = 'text-align:center; padding:8px; min-width:180px;';
 		popupContent.innerHTML = `
@@ -280,7 +267,6 @@ export default async function renderDistributeQuestions({ category, participants
 
 		marker.bindPopup(popupContent);
 
-		// Guardar nombre cuando se presiona el botón
 		setTimeout(() => {
 			const saveBtn = document.getElementById(`save-name-${idx}`);
 			const nameInput = document.getElementById(`point-name-${idx}`);
@@ -296,7 +282,6 @@ export default async function renderDistributeQuestions({ category, participants
 			}
 		}, 100);
 
-		// Actualizar coordenadas cuando se mueve el marcador
 		marker.on('dragend', (e) => {
 			const newCoords = marker.getLatLng();
 			currentPoints[idx].coords = [newCoords.lat, newCoords.lng];
@@ -305,7 +290,6 @@ export default async function renderDistributeQuestions({ category, participants
 		});
 	}
 
-	// Función para crear contenido del popup
 	function createPopupContent(idx, name) {
 		return `
 			<div style="text-align:center; padding:8px; min-width:180px;">

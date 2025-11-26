@@ -1,6 +1,5 @@
 const supabase = require('../services/supabase.service');
 
-// Generar código de sala único
 function generateRoomCode() {
   const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   let code = '';
@@ -10,7 +9,6 @@ function generateRoomCode() {
   return code;
 }
 
-// Crear una sala en admin_room
 async function createRoom(adminUserId, categoryId, maxParticipants, timePerQuestion, mapPoints = null) {
   try {
     const roomPin = generateRoomCode();
@@ -25,7 +23,6 @@ async function createRoom(adminUserId, categoryId, maxParticipants, timePerQuest
       room_status: false
     };
 
-    // Agregar puntos del mapa si se proporcionan
     if (mapPoints && Array.isArray(mapPoints) && mapPoints.length > 0) {
       insertData.map_points = mapPoints;
       console.log(`📍 Guardando ${mapPoints.length} puntos personalizados del mapa`);
@@ -53,7 +50,6 @@ async function createRoom(adminUserId, categoryId, maxParticipants, timePerQuest
     console.log(`✅ Room created successfully:`, data);
     console.log(`✅ Room PIN in database: "${data.room_pin}" (type: ${typeof data.room_pin})`);
 
-    // Verificar que la sala se puede leer inmediatamente
     const verifyResult = await getRoomByPin(data.room_pin);
     if (verifyResult.success) {
       console.log(`✅ Verified: Room can be read immediately after creation`);
@@ -68,12 +64,10 @@ async function createRoom(adminUserId, categoryId, maxParticipants, timePerQuest
   }
 }
 
-// Obtener sala por PIN
 async function getRoomByPin(roomPin) {
   try {
     console.log(`🔍 Getting room by PIN: "${roomPin}" (type: ${typeof roomPin}, length: ${roomPin?.length})`);
 
-    // Limpiar el roomPin (eliminar espacios, convertir a mayúsculas)
     const cleanRoomPin = String(roomPin).trim().toUpperCase();
     console.log(`🔍 Cleaned room PIN: "${cleanRoomPin}"`);
 
@@ -101,10 +95,8 @@ async function getRoomByPin(roomPin) {
   }
 }
 
-// Obtener sala con jugadores
 async function getRoomWithPlayers(roomPin) {
   try {
-    // Limpiar el roomPin (eliminar espacios, convertir a mayúsculas)
     const cleanRoomPin = String(roomPin).trim().toUpperCase();
     console.log(`🔍 Getting room with players for PIN: "${cleanRoomPin}"`);
 
@@ -116,7 +108,6 @@ async function getRoomWithPlayers(roomPin) {
 
     if (roomError) {
       console.error(`❌ Error getting room ${cleanRoomPin}:`, roomError);
-      // Si es un error de "no encontrado", retornar un error más claro
       if (roomError.code === 'PGRST116') {
         return { success: false, error: 'Sala no encontrada' };
       }
@@ -134,7 +125,7 @@ async function getRoomWithPlayers(roomPin) {
       .from('players_room')
       .select('*')
       .eq('room_pin', cleanRoomPin)
-      .order('id', { ascending: true }); // Ordenar por id si created_at no existe
+      .order('id', { ascending: true });
 
     if (playersError) {
       console.error(`❌ Error getting players for room ${cleanRoomPin}:`, playersError);
@@ -156,14 +147,11 @@ async function getRoomWithPlayers(roomPin) {
   }
 }
 
-// Unirse a una sala
 async function joinRoom(roomPin, userId, playerName, avatarUrl, avatarBg, isModerator = false) {
   try {
-    // Limpiar el roomPin
     const cleanRoomPin = String(roomPin).trim().toUpperCase();
     console.log(`🔍 Joining room: "${cleanRoomPin}", userId: ${userId}, playerName: "${playerName}"`);
 
-    // Verificar que la sala existe
     const roomResult = await getRoomByPin(cleanRoomPin);
     if (!roomResult.success || !roomResult.data) {
       console.error(`❌ Cannot join: room ${cleanRoomPin} does not exist`);
@@ -173,7 +161,6 @@ async function joinRoom(roomPin, userId, playerName, avatarUrl, avatarBg, isMode
     const room = roomResult.data;
     console.log(`✅ Room exists, proceeding to join`);
 
-    // Verificar si la sala está llena
     const { count } = await supabase
       .from('players_room')
       .select('*', { count: 'exact', head: true })
@@ -183,7 +170,6 @@ async function joinRoom(roomPin, userId, playerName, avatarUrl, avatarBg, isMode
       return { success: false, error: `Sala llena (${room.room_size} jugadores máximo)` };
     }
 
-    // Verificar si el usuario ya está en la sala
     const { data: existingPlayer } = await supabase
       .from('players_room')
       .select('*')
@@ -196,7 +182,6 @@ async function joinRoom(roomPin, userId, playerName, avatarUrl, avatarBg, isMode
       return { success: true, data: existingPlayer, alreadyJoined: true };
     }
 
-    // Insertar jugador
     console.log(`➕ Inserting player into room ${cleanRoomPin}...`);
     const { data, error } = await supabase
       .from('players_room')
@@ -226,7 +211,6 @@ async function joinRoom(roomPin, userId, playerName, avatarUrl, avatarBg, isMode
   }
 }
 
-// Actualizar score de un jugador
 async function updatePlayerScore(roomPin, userId, points) {
   try {
     const { data: player } = await supabase
@@ -258,14 +242,11 @@ async function updatePlayerScore(roomPin, userId, points) {
   }
 }
 
-// Iniciar sala (cambiar room_status a true)
 async function startRoom(roomPin, adminUserId) {
   try {
-    // Limpiar el roomPin
     const cleanRoomPin = String(roomPin).trim().toUpperCase();
     console.log(`🚀 Starting room: "${cleanRoomPin}", adminUserId: ${adminUserId}`);
 
-    // Verificar que el usuario es el admin
     const { data: room, error: roomError } = await supabase
       .from('admin_room')
       .select('*')
@@ -300,7 +281,6 @@ async function startRoom(roomPin, adminUserId) {
   }
 }
 
-// Obtener resultados finales de una sala
 async function getRoomResults(roomPin) {
   try {
     const { data, error } = await supabase
@@ -317,7 +297,6 @@ async function getRoomResults(roomPin) {
   }
 }
 
-// Salir de una sala
 async function leaveRoom(roomPin, userId) {
   try {
     const { error } = await supabase

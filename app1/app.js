@@ -11,8 +11,6 @@ import renderCorrectAnswer from "./screens/correctAnswer.js";
 import renderWrongAnswer from "./screens/wrongAnswer.js";
 import renderGameResults from "./screens/gameResults.js";
 
-// Configurar Supabase para Realtime (se configuran desde index.html)
-// Estas variables se deben definir en index.html antes de cargar este script
 if (typeof window.SUPABASE_URL === 'undefined') {
   console.warn('⚠️ SUPABASE_URL no está definido. Realtime no funcionará.');
 }
@@ -50,7 +48,6 @@ if (savedUser && savedUserId) {
   memoryState.currentUserAvatar = savedAvatar || '/assets/images/Group 4.png';
   memoryState.currentUserBgColor = savedBgColor || '#F9D648';
 
-  // Cargar inventario desde el servidor al iniciar la app
   (async () => {
     try {
       const response = await fetch(`${window.location.origin}/users/${memoryState.currentUserId}/boosters`);
@@ -155,12 +152,9 @@ function joinRoom(code, playerName) {
 
 async function updateCoins(delta) {
   if (!memoryState.currentUserId) return;
-  // Obtener el valor actual (que ya debería estar actualizado localmente)
   const currentLocalCoins = memoryState.currentUserCoins || 0;
   const response = await makeRequest(`/users/${memoryState.currentUserId}/coins`, "PATCH", { delta });
   if (response?.success && response.coins !== undefined) {
-    // Usar el valor MÁS ALTO entre el local actual y el del servidor
-    // NO sumar el delta de nuevo porque ya se sumó localmente
     const serverCoins = response.coins;
     const finalCoins = Math.max(currentLocalCoins, serverCoins);
     memoryState.currentUserCoins = finalCoins;

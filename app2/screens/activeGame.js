@@ -3,11 +3,9 @@ import { navigateTo } from '../app.js';
 export default async function renderActiveGame({ roomCode } = {}) {
 	const app = document.getElementById('app');
 
-	// Verificar el estado de la sala antes de mostrar la pantalla de juego
 	const { loadRoomState } = await import('../services/roomsRealtime.js');
 	const roomState = await loadRoomState(roomCode);
 
-	// Si la sala no ha iniciado, volver al lobby
 	if (!roomState || !roomState.room_status) {
 		console.warn('Room not started yet, redirecting to lobby');
 		alert('La partida aún no ha iniciado. Espera a que el moderador la inicie.');
@@ -42,7 +40,6 @@ export default async function renderActiveGame({ roomCode } = {}) {
   `
 			: '';
 
-	// Inicializar jugadores desde el estado de la sala
 	let currentPlayers = (roomState && roomState.players)
 		? roomState.players.map((p) => ({
 			name: p.player_name || p.name || 'Jugador',
@@ -50,15 +47,11 @@ export default async function renderActiveGame({ roomCode } = {}) {
 		}))
 		: [];
 
-	// Calcular pregunta actual basado en el score de los jugadores
-	// Cada pregunta correcta = 100 puntos, así que score/100 = preguntas correctas
-	// La pregunta actual es la siguiente (preguntas correctas + 1)
 	const totalQuestions = window.roomQuestions?.length || 5;
 
 	function calculateCurrentQuestion(players) {
 		if (!players || players.length === 0) return 1;
 
-		// Obtener el jugador con más progreso (más score)
 		const maxScore = Math.max(...players.map(p => p.score || 0));
 		const questionsAnswered = Math.floor(maxScore / 100);
 		const currentQuestion = Math.min(questionsAnswered + 1, totalQuestions);
@@ -67,7 +60,6 @@ export default async function renderActiveGame({ roomCode } = {}) {
 
 	let currentQuestion = calculateCurrentQuestion(currentPlayers);
 
-	// Cargar puntos del mapa desde el estado de la sala
 	let mapPoints = window.roomMapPoints;
 	if (!mapPoints && roomState && roomState.map_points) {
 		mapPoints = roomState.map_points;
@@ -121,11 +113,9 @@ export default async function renderActiveGame({ roomCode } = {}) {
 
 	let subscription = null;
 
-	// Cargar estado inicial y suscribirse a cambios
 	if (roomCode) {
 		const { subscribeToRoom, loadRoomState } = await import('../services/roomsRealtime.js');
 
-		// Cargar estado inicial (ya tenemos currentPlayers inicializado arriba)
 		const initialState = await loadRoomState(roomCode);
 		if (initialState && initialState.players) {
 			currentPlayers = initialState.players.map((p) => ({
@@ -135,10 +125,8 @@ export default async function renderActiveGame({ roomCode } = {}) {
 			renderScores(currentPlayers);
 		}
 
-		// Suscribirse a cambios en tiempo real
 		subscription = subscribeToRoom(roomCode, async (updatedState) => {
 			console.log('🔄 Cambio detectado en sala (app2 activeGame), actualizando estado...');
-			// El estado ya viene actualizado del callback
 			if (updatedState && updatedState.players) {
 				currentPlayers = updatedState.players.map((p) => ({
 					name: p.player_name || p.name || 'Jugador',
@@ -149,7 +137,6 @@ export default async function renderActiveGame({ roomCode } = {}) {
 			}
 		});
 
-		// Actualizar contador de pregunta inicialmente
 		updateQuestionCounter();
 	}
 
@@ -165,12 +152,10 @@ export default async function renderActiveGame({ roomCode } = {}) {
 		const uniquePlayers = [...new Map(players.map((p) => [p.name, p])).values()];
 		const sorted = uniquePlayers.sort((a, b) => b.score - a.score);
 
-		// Calcular pregunta actual basado en el progreso
 		const maxScore = sorted.length > 0 ? Math.max(...sorted.map(p => p.score || 0)) : 0;
 		const questionsAnswered = Math.floor(maxScore / 100);
 		const newCurrentQuestion = Math.min(questionsAnswered + 1, totalQuestions);
 
-		// Actualizar pregunta actual si cambió
 		if (newCurrentQuestion !== currentQuestion) {
 			currentQuestion = newCurrentQuestion;
 			updateQuestionCounter();
@@ -182,7 +167,6 @@ export default async function renderActiveGame({ roomCode } = {}) {
 			li.style.padding = '4px 0';
 			li.style.borderBottom = idx < sorted.length - 1 ? '1px solid rgba(0,0,0,0.1)' : 'none';
 
-			// Calcular progreso del jugador
 			const playerQuestionsAnswered = Math.floor((p.score || 0) / 100);
 			const playerCurrentQuestion = Math.min(playerQuestionsAnswered + 1, totalQuestions);
 
@@ -193,7 +177,6 @@ export default async function renderActiveGame({ roomCode } = {}) {
 	}
 
 	function updateQuestionCounter() {
-		// Buscar el span que contiene "Pregunta X de Y"
 		const allSpans = document.querySelectorAll('.main-content span');
 		allSpans.forEach(el => {
 			if (el.textContent.includes('Pregunta') && el.textContent.includes('de')) {
@@ -210,12 +193,10 @@ export default async function renderActiveGame({ roomCode } = {}) {
 	setTimeout(async () => {
 		renderScores(currentPlayers);
 
-		// Inicializar mapa
 		if (window.L) {
 			initModeratorMap(roomCode, mapPoints);
 		}
 
-		// Suscribirse a ubicaciones de jugadores
 		const { subscribeToPlayerLocations } = await import('../services/playerLocationsRealtime.js');
 		locationSubscription = subscribeToPlayerLocations(roomCode, (locations) => {
 			updatePlayerMarkers(locations, mapPoints);
@@ -252,7 +233,6 @@ export default async function renderActiveGame({ roomCode } = {}) {
 			attribution: '© OpenStreetMap contributors',
 		}).addTo(map);
 
-		// Agregar marcadores de preguntas
 		points.forEach((point, idx) => {
 			const icon = L.divIcon({
 				className: 'custom-question-marker',
@@ -277,7 +257,6 @@ export default async function renderActiveGame({ roomCode } = {}) {
 
 		const { isPlayerNearPoint, findNearestPoint } = await import('../services/playerLocationsRealtime.js');
 
-		// Si no hay ubicaciones, limpiar todo
 		if (!locations || locations.length === 0) {
 			Object.values(playerMarkers).forEach(marker => {
 				map.removeLayer(marker);
@@ -290,7 +269,6 @@ export default async function renderActiveGame({ roomCode } = {}) {
 			return;
 		}
 
-		// Limpiar marcadores de jugadores anteriores
 		Object.values(playerMarkers).forEach(marker => {
 			if (marker && map.hasLayer(marker)) {
 				map.removeLayer(marker);
@@ -298,7 +276,6 @@ export default async function renderActiveGame({ roomCode } = {}) {
 		});
 		playerMarkers = {};
 
-		// Limpiar alertas anteriores
 		const alertsDiv = document.getElementById('player-proximity-alerts');
 		if (alertsDiv) {
 			alertsDiv.innerHTML = '';
@@ -306,7 +283,6 @@ export default async function renderActiveGame({ roomCode } = {}) {
 
 		const proximityAlerts = [];
 
-		// Agregar marcadores de jugadores
 		locations.forEach((location) => {
 			if (!location.latitude || !location.longitude) return;
 
@@ -319,11 +295,9 @@ export default async function renderActiveGame({ roomCode } = {}) {
 
 			const marker = L.marker([location.latitude, location.longitude], { icon: playerIcon }).addTo(map);
 
-			// Encontrar punto más cercano
 			const nearestPoint = findNearestPoint(location.latitude, location.longitude, points);
 			const isNear = nearestPoint && nearestPoint.distance <= 18;
 
-			// Crear popup con información
 			let popupContent = `
 				<div style="text-align:center; padding:8px; min-width:150px;">
 					<strong style="font-size:14px; color:#1e3a8a;">${location.player_name || 'Jugador'}</strong><br/>
@@ -335,7 +309,6 @@ export default async function renderActiveGame({ roomCode } = {}) {
 					popupContent += `<span style="color:#11A36B; font-weight:bold;">📍 Cerca de: ${nearestPoint.name}</span><br/>`;
 					popupContent += `<small style="color:#11A36B;">A ${distance}m (≤10m)</small>`;
 
-					// Agregar alerta
 					proximityAlerts.push({
 						player: location.player_name || 'Jugador',
 						point: nearestPoint.name,
@@ -353,7 +326,6 @@ export default async function renderActiveGame({ roomCode } = {}) {
 			playerMarkers[location.player_name] = marker;
 		});
 
-		// Mostrar alertas de proximidad
 		if (alertsDiv && proximityAlerts.length > 0) {
 			alertsDiv.innerHTML = proximityAlerts.map(alert => `
 				<div style="background:#11A36B; color:white; padding:8px 12px; border-radius:8px; margin-bottom:4px; font-size:13px; font-weight:bold;">

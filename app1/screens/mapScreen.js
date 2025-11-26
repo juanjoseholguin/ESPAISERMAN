@@ -13,9 +13,9 @@ export default function renderMapScreen({ category, participants, timePerQuestio
           <h2 style="text-align:center; color:#1e3a8a; font-size:24px; margin-bottom:8px;">Distribuye las preguntas en el área</h2>
           <p style="text-align:center; color:#666; margin-bottom:16px;">Visualiza el campus de Icesi</p>
         </div>
-        
+
         <div id="map" style="width:100%; height:400px; border-radius:16px; overflow:hidden; margin:16px 0; touch-action: pan-x pan-y;"></div>
-        
+
         <div style="margin:16px 0; text-align:center;">
           <button id="create-room-btn" class="btn-primary" style="background:#11A36B; border-color:#0C6E4A; max-width:320px;">Crear sala</button>
         </div>

@@ -2,7 +2,6 @@ import { getSupabaseClient } from '../services/supabaseClient.js';
 
 let locationChannel = null;
 
-// Función para calcular distancia entre dos puntos (Haversine)
 function calculateDistance(lat1, lon1, lat2, lon2) {
 	const R = 6371e3;
 	const φ1 = (lat1 * Math.PI) / 180;
@@ -18,7 +17,6 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 	return R * c;
 }
 
-// Suscribirse a ubicaciones de jugadores en tiempo real
 export function subscribeToPlayerLocations(roomCode, onLocationUpdate) {
 	const supabase = getSupabaseClient();
 
@@ -27,7 +25,6 @@ export function subscribeToPlayerLocations(roomCode, onLocationUpdate) {
 		return null;
 	}
 
-	// Limpiar suscripción anterior si existe
 	if (locationChannel) {
 		supabase.removeChannel(locationChannel);
 		locationChannel = null;
@@ -48,7 +45,6 @@ export function subscribeToPlayerLocations(roomCode, onLocationUpdate) {
 			async (payload) => {
 				console.log('📍 Cambio en ubicaciones de jugadores:', payload);
 
-				// Cargar todas las ubicaciones actuales
 				const { data: locations, error } = await supabase
 					.from('player_locations')
 					.select('*')
@@ -66,7 +62,6 @@ export function subscribeToPlayerLocations(roomCode, onLocationUpdate) {
 		)
 		.subscribe();
 
-	// Cargar ubicaciones iniciales
 	loadPlayerLocations(roomCode).then(locations => {
 		if (onLocationUpdate) {
 			onLocationUpdate(locations || []);
@@ -83,7 +78,6 @@ export function subscribeToPlayerLocations(roomCode, onLocationUpdate) {
 	};
 }
 
-// Cargar ubicaciones de jugadores
 export async function loadPlayerLocations(roomCode) {
 	const supabase = getSupabaseClient();
 
@@ -110,13 +104,11 @@ export async function loadPlayerLocations(roomCode) {
 	}
 }
 
-// Calcular si un jugador está cerca de un punto (≤18 metros)
 export function isPlayerNearPoint(playerLat, playerLon, pointLat, pointLon, radiusMeters = 18) {
 	const distance = calculateDistance(playerLat, playerLon, pointLat, pointLon);
 	return distance <= radiusMeters;
 }
 
-// Encontrar el punto más cercano a un jugador
 export function findNearestPoint(playerLat, playerLon, points) {
 	let nearestPoint = null;
 	let minDistance = Infinity;

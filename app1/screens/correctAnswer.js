@@ -2,7 +2,7 @@ import { navigateTo, updateCoins } from "../app.js";
 
 export default function renderCorrectAnswer() {
   const app = document.getElementById("app");
-  
+
   app.innerHTML = `
     <div class="screen active" style="justify-content: center;">
       <div style="text-align:center;">

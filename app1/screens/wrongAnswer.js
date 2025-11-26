@@ -2,7 +2,7 @@ import { navigateTo } from "../app.js";
 
 export default function renderWrongAnswer() {
   const app = document.getElementById("app");
-  
+
   app.innerHTML = `
     <div class="screen active" style="justify-content: center;">
       <div style="text-align:center;">

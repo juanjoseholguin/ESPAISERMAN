@@ -49,7 +49,6 @@ export default async function renderLobby({ code, category, participants, timePe
 			li.style.padding = '8px 0';
 			li.style.borderBottom = idx < uniquePlayers.length - 1 ? '1px solid rgba(0,0,0,0.1)' : 'none';
 			li.style.fontSize = '16px';
-			// Usar player_name si existe, sino name
 			const playerName = p.player_name || p.name || 'Jugador';
 			li.innerHTML = `${idx + 1}. ${playerName}`;
 			list.appendChild(li);
@@ -58,10 +57,8 @@ export default async function renderLobby({ code, category, participants, timePe
 		if (codeEl && state.code) codeEl.textContent = state.code;
 	}
 
-	// Cargar estado inicial
 	const { subscribeToRoom, loadRoomState } = await import('../services/roomsRealtime.js');
-	
-	// Función para recargar el estado
+
 	const reloadRoomState = async () => {
 		console.log(`🔄 Reloading room state for: ${roomCode}`);
 		const state = await loadRoomState(roomCode);
@@ -74,22 +71,17 @@ export default async function renderLobby({ code, category, participants, timePe
 		}
 		return null;
 	};
-	
-	// Cargar estado inicial - esperar un poco si la sala acaba de crearse
+
 	if (roomCode) {
-		// Si la sala acaba de crearse, esperar un momento antes de cargar
 		await new Promise(resolve => setTimeout(resolve, 500));
 		await reloadRoomState();
 	}
 
-	// Suscribirse a cambios en tiempo real
 	if (roomCode) {
 		subscription = subscribeToRoom(roomCode, async (state) => {
 			console.log('🔄 Cambio detectado en sala (app2), recargando estado...');
-			// Recargar el estado completo cuando hay cambios
 			const updatedState = await reloadRoomState();
-			
-			// Si la sala se inicia (room_status cambia a true), navegar automáticamente
+
 			if (updatedState && updatedState.room_status && window.roomQuestions) {
 				console.log('Room started detected via Realtime, navigating to active game');
 				if (subscription) subscription.unsubscribe();
@@ -109,11 +101,9 @@ export default async function renderLobby({ code, category, participants, timePe
 			try {
 				const { startRoomAPI, loadRoomState } = await import('../services/roomsRealtime.js');
 				await startRoomAPI(roomCode, window.memoryState.currentUserId);
-				
-				// Esperar un momento para que se actualice el estado
+
 				await new Promise(resolve => setTimeout(resolve, 500));
-				
-				// Verificar que la sala realmente inició
+
 				const roomState = await loadRoomState(roomCode);
 				if (roomState && roomState.room_status && window.roomQuestions) {
 					console.log('Room started successfully, navigating to active game');
@@ -141,8 +131,7 @@ export default async function renderLobby({ code, category, participants, timePe
 					true
 				);
 				console.log('✅ Moderator joined successfully');
-				
-				// Recargar el estado después de unirse
+
 				setTimeout(async () => {
 					console.log('🔄 Recargando estado después de unirse (moderador)...');
 					await reloadRoomState();

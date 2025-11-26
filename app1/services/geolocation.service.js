@@ -2,7 +2,6 @@ import { getSupabaseClient } from './supabaseClient.js';
 
 const PROXIMITY_RADIUS_METERS = 18;
 
-// Puntos por defecto (se sobrescriben con los puntos personalizados del mapa)
 let POINTS = [
 	{ name: 'Edificio A', coords: [3.3435, -76.533], questionNumber: 1 },
 	{ name: 'Biblioteca', coords: [3.3438, -76.5332], questionNumber: 2 },
@@ -11,7 +10,6 @@ let POINTS = [
 	{ name: 'Laboratorios', coords: [3.3445, -76.533], questionNumber: 5 },
 ];
 
-// Función para establecer puntos personalizados
 export function setCustomPoints(customPoints) {
 	if (customPoints && Array.isArray(customPoints) && customPoints.length > 0) {
 		POINTS = customPoints.map(p => ({
@@ -87,12 +85,8 @@ export function initGeolocation(roomCodeParam, playerNameParam) {
 }
 
 function requestLocationPermission() {
-	// En navegadores modernos, navigator.geolocation solicita permiso automáticamente
-	// Pero en algunos móviles (iOS Safari), puede necesitar una interacción del usuario
-	// Intentamos iniciar directamente - el navegador pedirá permiso si es necesario
 	console.log('📍 Solicitando permiso de geolocalización...');
 
-	// Verificar si ya tenemos permiso o intentar obtenerlo
 	if (navigator.permissions) {
 		navigator.permissions.query({ name: 'geolocation' })
 			.then((result) => {
@@ -101,18 +95,14 @@ function requestLocationPermission() {
 					startLocationTracking();
 				} else {
 					console.warn('📍 Permiso de geolocalización denegado o bloqueado');
-					// Intentar de todas formas - algunos navegadores no soportan permissions API
 					startLocationTracking();
 				}
 			})
 			.catch((error) => {
 				console.warn('📍 No se pudo verificar permiso (API no soportada), iniciando de todas formas:', error);
-				// Si la API de permissions no está disponible, intentar directamente
 				startLocationTracking();
 			});
 	} else {
-		// Si navigator.permissions no está disponible, intentar directamente
-		// El navegador pedirá permiso automáticamente
 		console.log('📍 API de permissions no disponible, iniciando geolocalización directamente');
 		startLocationTracking();
 	}
@@ -159,7 +149,6 @@ function startLocationTracking() {
 			console.error('❌ Código de error:', error.code);
 			console.error('❌ Mensaje:', error.message);
 
-			// Mostrar mensaje al usuario si el permiso fue denegado
 			if (error.code === 1) {
 				console.warn('⚠️ Permiso de geolocalización denegado por el usuario');
 				alert('Por favor, permite el acceso a tu ubicación para jugar. Ve a la configuración del navegador y habilita la geolocalización.');
@@ -265,7 +254,6 @@ export function getPoints() {
 	return POINTS;
 }
 
-// Función para obtener puntos personalizados desde window (usado por el juego)
 export function getCustomPoints() {
 	return window.roomMapPoints || POINTS;
 }

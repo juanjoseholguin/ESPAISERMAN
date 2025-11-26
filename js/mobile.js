@@ -16,21 +16,12 @@ class EspaisermanMobileApp {
     }
 
     setupEventListeners() {
-        // ========================================
-        // PANTALLA DE LOGIN
-        // ========================================
         document.getElementById('login-btn').addEventListener('click', () => this.handleLogin());
         document.getElementById('go-to-register').addEventListener('click', () => this.showScreen('register-screen'));
 
-        // ========================================
-        // PANTALLA DE REGISTRO
-        // ========================================
         document.getElementById('register-btn').addEventListener('click', () => this.handleRegister());
         document.getElementById('go-to-login').addEventListener('click', () => this.showScreen('login-screen'));
 
-        // ========================================
-        // ENTRADA DE TECLADO
-        // ========================================
         document.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 if (this.currentScreen === 'login-screen') {
@@ -43,7 +34,6 @@ class EspaisermanMobileApp {
     }
 
     setupMobileOptimizations() {
-        // Prevenir zoom en inputs
         const inputs = document.querySelectorAll('input');
         inputs.forEach(input => {
             input.addEventListener('focus', () => {
@@ -55,7 +45,6 @@ class EspaisermanMobileApp {
             });
         });
 
-        // Prevenir scroll cuando el teclado está abierto
         document.addEventListener('touchstart', (e) => {
             if (e.target.tagName === 'INPUT') {
                 document.body.classList.add('no-scroll');
@@ -66,34 +55,28 @@ class EspaisermanMobileApp {
             document.body.classList.remove('no-scroll');
         });
 
-        // Actualizar barra de estado
         this.updateStatusBar();
-        setInterval(() => this.updateStatusBar(), 60000); // Cada minuto
+        setInterval(() => this.updateStatusBar(), 60000);
     }
 
     showScreen(screenId) {
-        // Ocultar todas las pantallas
         const screens = document.querySelectorAll('.screen');
         screens.forEach(screen => {
             screen.classList.remove('active');
         });
 
-        // Mostrar la pantalla seleccionada
         const targetScreen = document.getElementById(screenId);
         if (targetScreen) {
             targetScreen.classList.add('active');
             this.currentScreen = screenId;
         }
 
-        // Efectos especiales
         this.handleScreenEffects(screenId);
     }
 
     handleScreenEffects(screenId) {
-        // Scroll al top cuando cambia de pantalla
         window.scrollTo(0, 0);
-        
-        // Efectos específicos por pantalla
+
         switch(screenId) {
             case 'login-screen':
                 this.focusFirstInput('login-username');
@@ -171,27 +154,21 @@ class EspaisermanMobileApp {
             return;
         }
 
-        // Simular registro
         this.showLoading(true);
-        
+
         setTimeout(() => {
-            this.user = { 
+            this.user = {
                 name,
                 email,
                 username: email.split('@')[0]
             };
             this.showLoading(false);
             this.showAlert('Éxito', 'Cuenta creada exitosamente');
-            // Aquí irías al menú principal
             console.log('Usuario registrado:', this.user);
         }, 1500);
     }
 
-    // ========================================
-    // FUNCIONES DE UTILIDAD
-    // ========================================
     showAlert(title, message) {
-        // Crear modal de alerta móvil
         const modal = document.createElement('div');
         modal.className = 'alert-modal';
         modal.innerHTML = `
@@ -201,8 +178,7 @@ class EspaisermanMobileApp {
                 <button class="alert-btn" onclick="this.parentElement.parentElement.remove()">OK</button>
             </div>
         `;
-        
-        // Estilos del modal
+
         modal.style.cssText = `
             position: fixed;
             top: 0;
@@ -215,7 +191,7 @@ class EspaisermanMobileApp {
             justify-content: center;
             z-index: 1000;
         `;
-        
+
         const content = modal.querySelector('.alert-content');
         content.style.cssText = `
             background: white;
@@ -226,7 +202,7 @@ class EspaisermanMobileApp {
             margin: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         `;
-        
+
         const btn = modal.querySelector('.alert-btn');
         btn.style.cssText = `
             background: #FF4444;
@@ -239,10 +215,9 @@ class EspaisermanMobileApp {
             cursor: pointer;
             margin-top: 15px;
         `;
-        
+
         document.body.appendChild(modal);
-        
-        // Auto-remover después de 3 segundos
+
         setTimeout(() => {
             if (modal.parentElement) {
                 modal.remove();
@@ -251,10 +226,10 @@ class EspaisermanMobileApp {
     }
 
     showLoading(show) {
-        const btn = this.currentScreen === 'login-screen' 
+        const btn = this.currentScreen === 'login-screen'
             ? document.getElementById('login-btn')
             : document.getElementById('register-btn');
-            
+
         if (show) {
             btn.textContent = 'Cargando...';
             btn.disabled = true;
@@ -273,41 +248,31 @@ class EspaisermanMobileApp {
 
     updateStatusBar() {
         const now = new Date();
-        const time = now.toLocaleTimeString('es-CO', { 
-            hour: '2-digit', 
+        const time = now.toLocaleTimeString('es-CO', {
+            hour: '2-digit',
             minute: '2-digit',
-            hour12: false 
+            hour12: false
         });
-        
+
         const timeElement = document.querySelector('.time');
         if (timeElement) {
             timeElement.textContent = time;
         }
     }
 
-    // ========================================
-    // FUNCIONES GLOBALES
-    // ========================================
     goBack() {
         if (this.currentScreen === 'register-screen') {
             this.showScreen('login-screen');
         } else {
-            // En una app real, aquí irías a la pantalla anterior
             console.log('Volver a pantalla anterior');
         }
     }
 }
 
-// ========================================
-// INICIALIZACIÓN
-// ========================================
 document.addEventListener('DOMContentLoaded', () => {
     window.espaisermanApp = new EspaisermanMobileApp();
 });
 
-// ========================================
-// FUNCIONES GLOBALES PARA HTML
-// ========================================
 window.goBack = () => {
     if (window.espaisermanApp) {
         window.espaisermanApp.goBack();
@@ -320,11 +285,7 @@ window.showScreen = (screenId) => {
     }
 };
 
-// ========================================
-// PREVENIR COMPORTAMIENTOS NO DESEADOS EN MÓVIL
-// ========================================
 document.addEventListener('touchstart', (e) => {
-    // Prevenir zoom en doble tap
     if (e.touches.length > 1) {
         e.preventDefault();
     }
@@ -339,7 +300,6 @@ document.addEventListener('touchend', (e) => {
     lastTouchEnd = now;
 }, false);
 
-// Prevenir scroll en iOS
 document.addEventListener('touchmove', (e) => {
     if (document.body.classList.contains('no-scroll')) {
         e.preventDefault();

@@ -37,12 +37,11 @@ const getQuestionsByCategory = async (req, res) => {
 		console.log('Fetching questions for category:', categoryId);
 
 		const candidateColumns = [
-			'category__id', // columna legacy (doble guion bajo)
-			'category_id', // columna original
-			'category', // texto (por si guardaron el nombre literal)
+			'category__id',
+			'category_id',
+			'category',
 		];
 
-		// Si el parámetro es numérico, intentamos primero las columnas numéricas
 		const isNumeric = /^\d+$/.test(categoryId);
 		const orderedColumns = isNumeric
 			? ['category__id', 'category_id', 'category']
@@ -61,7 +60,6 @@ const getQuestionsByCategory = async (req, res) => {
 				.order('id', { ascending: true });
 
 			if (error) {
-				// Si la columna no existe, seguimos con la siguiente
 				if (error.message?.includes('column') && error.message?.includes('does not exist')) {
 					console.warn(`Column ${column} does not exist in questions table`);
 					continue;
@@ -84,7 +82,6 @@ const getQuestionsByCategory = async (req, res) => {
 				.json({ error: 'Error obteniendo preguntas por categoría', details: lastError.message });
 		}
 
-		// Si no encontramos nada con los filtros, devolvemos todas para no bloquear al usuario
 		if (questions.length === 0) {
 			const { data: allQuestions, error: allError } = await supabase.from('questions').select('*').order('id');
 			if (allError) {
