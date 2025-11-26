@@ -55,25 +55,39 @@ export default async function renderDistributeQuestions({ category, participants
 
 			console.log(`Found ${questions.length} questions for category ${category}`);
 
-			const code = generateRoomCode();
 			const selectedQuestions = Array.isArray(questions) ? questions.slice(0, 5) : [];
 
 			console.log('Selected questions count:', selectedQuestions.length);
 
-			const socket = window.socket;
-			socket.emit('room:create', {
-				code,
-				host: window.memoryState.currentUser,
-				category,
-				maxParticipants: participants,
-				timePerQuestion,
-				questions: selectedQuestions,
-			});
+			// Crear sala usando API
+			try {
+				const { createRoomAPI } = await import('../services/roomsRealtime.js');
+				const roomData = await createRoomAPI(
+					window.memoryState.currentUserId,
+					parseInt(category, 10),
+					participants,
+					timePerQuestion
+				);
 
-			socket.once('room:created', () => {
+				if (!roomData || !roomData.room_pin) {
+					throw new Error('La sala se creó pero no se recibió el código');
+				}
+
+				const code = roomData.room_pin;
+				console.log(`✅ Sala creada con código: ${code}`);
+				console.log(`📦 Guardando ${selectedQuestions.length} preguntas`);
+				
 				window.roomQuestions = selectedQuestions;
+				window.roomTimePerQuestion = timePerQuestion;
+				
+				// Esperar un momento para que la sala se guarde completamente
+				await new Promise(resolve => setTimeout(resolve, 300));
+				
 				navigateTo('/lobby', { code, category, participants, timePerQuestion });
-			});
+			} catch (error) {
+				console.error('Error creating room:', error);
+				alert(`Error al crear la sala: ${error.message}`);
+			}
 		} catch (error) {
 			console.error('Error loading questions:', error);
 			alert(`Error al cargar las preguntas: ${error.message}`);

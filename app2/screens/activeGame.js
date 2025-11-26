@@ -1,7 +1,50 @@
 import { navigateTo } from '../app.js';
 
-export default function renderActiveGame({ roomCode } = {}) {
+export default async function renderActiveGame({ roomCode } = {}) {
 	const app = document.getElementById('app');
+	
+	// Verificar el estado de la sala antes de mostrar la pantalla de juego
+	const { loadRoomState } = await import('../services/roomsRealtime.js');
+	const roomState = await loadRoomState(roomCode);
+	
+	// Si la sala no ha iniciado, volver al lobby
+	if (!roomState || !roomState.room_status) {
+		console.warn('Room not started yet, redirecting to lobby');
+		alert('La partida aún no ha iniciado. Espera a que el moderador la inicie.');
+		navigateTo('/lobby', { code: roomCode });
+		return;
+	}
+	
+ 	const activePowerups = JSON.parse(localStorage.getItem('activePowerups') || '[]');
+	const powerupNames = {
+		guaro: 'Media',
+		chicharron: 'Chichaghrrrom',
+		empanada: 'Empanadirri',
+		cafe: 'Café',
+	};
+
+	const powerupsBanner =
+		activePowerups.length > 0
+			? `
+    <div style="display:flex; gap:8px; padding:8px 16px; margin-bottom:8px; overflow-x:auto; background:rgba(255,226,138,0.3);">
+      <div style="font-weight:bold; color:#1e3a8a; margin-right:8px; display:flex; align-items:center;">⚡ Potenciadores:</div>
+      ${activePowerups
+				.map(
+					(powerup) => `
+        <div style="background:rgba(255,226,138,0.95); padding:6px 10px; border-radius:10px; display:flex; align-items:center; gap:6px; min-width:fit-content; border:2px solid #1e3a8a;">
+          <img src="/assets/images/${powerup}.png" alt="${powerup}" style="width:28px; height:28px; object-fit:contain;">
+          <span style="font-size:13px; font-weight:bold; color:#1e3a8a;">${powerupNames[powerup] || powerup}</span>
+        </div>
+      `
+				)
+				.join('')}
+    </div>
+  `
+			: '';
+
+	// Obtener el número de pregunta actual (por defecto 1)
+	const currentQuestion = window.currentQuestionIndex || 1;
+	const totalQuestions = window.roomQuestions?.length || 5;
 
 	app.innerHTML = `
     <div class="screen active">
@@ -11,9 +54,11 @@ export default function renderActiveGame({ roomCode } = {}) {
           <img src="/assets/images/Group 4.png" alt="Espaiserman" class="group4-image" style="max-width:220px;">
         </div>
 
+        ${powerupsBanner}
+
         <div style="display:flex; justify-content:center; margin-top:-12px;">
           <div style="background:rgba(255,226,138,0.95); padding:8px 16px; border-radius:16px;">
-            <span style="font-weight:800; color:#1e3a8a; font-size:18px;">Pregunta 1 de 5</span>
+            <span style="font-weight:800; color:#1e3a8a; font-size:18px;">Pregunta ${currentQuestion} de ${totalQuestions}</span>
           </div>
         </div>
 
@@ -32,23 +77,36 @@ export default function renderActiveGame({ roomCode } = {}) {
   `;
 
 	let currentPlayers = [];
+	let subscription = null;
 
-	const socket = window.socket;
-
-	socket.off('room:state');
-
-	socket.on('room:state', (state) => {
-		console.log('Room state received in app2 activeGame:', state);
-		if (state.players && state.players.length > 0) {
-			currentPlayers = state.players.map((p) => ({ name: p.name, score: p.score || 0 }));
-		} else {
-			currentPlayers = [];
-		}
-		renderScores(currentPlayers);
-	});
-
+	// Cargar estado inicial y suscribirse a cambios
 	if (roomCode) {
-		socket.emit('room:state-request', { code: roomCode });
+		const { subscribeToRoom, loadRoomState } = await import('../services/roomsRealtime.js');
+		
+		// Cargar estado inicial
+		const initialState = await loadRoomState(roomCode);
+		if (initialState && initialState.players) {
+			currentPlayers = initialState.players.map((p) => ({ 
+				name: p.player_name || p.name || 'Jugador', 
+				score: p.score || 0 
+			}));
+			renderScores(currentPlayers);
+		}
+		
+		// Suscribirse a cambios en tiempo real
+		subscription = subscribeToRoom(roomCode, async (state) => {
+			console.log('🔄 Cambio detectado en sala (app2 activeGame), recargando estado...');
+			// Recargar el estado completo para obtener los scores actualizados
+			const updatedState = await loadRoomState(roomCode);
+			if (updatedState && updatedState.players) {
+				currentPlayers = updatedState.players.map((p) => ({ 
+					name: p.player_name || p.name || 'Jugador', 
+					score: p.score || 0 
+				}));
+				console.log('📊 Players updated:', currentPlayers);
+				renderScores(currentPlayers);
+			}
+		});
 	}
 
 	function renderScores(players = []) {
@@ -78,7 +136,8 @@ export default function renderActiveGame({ roomCode } = {}) {
 		renderScores(currentPlayers);
 
 		document.getElementById('back-active').addEventListener('click', () => {
-			navigateTo('/lobby');
+			if (subscription) subscription.unsubscribe();
+			navigateTo('/lobby', { code: roomCode });
 		});
 
 		document.getElementById('btn-end-game').addEventListener('click', () => {

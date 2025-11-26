@@ -135,32 +135,46 @@ export default function renderScreen1() {
 		splashScreen.classList.add('active');
 	});
 
+	const persistSession = (user, inventory = []) => {
+		if (!user) return;
+		memoryState.currentUser = user.username;
+		memoryState.currentUserId = user.id;
+		memoryState.currentUserCoins = user.coins || 0;
+		memoryState.inventory = inventory || [];
+		memoryState.currentUserAvatar = user.avatar_url;
+		memoryState.currentUserBgColor = user.avatar_bg;
+		localStorage.setItem('currentUser', user.username);
+		localStorage.setItem('currentUserId', user.id);
+		localStorage.setItem('currentUserCoins', user.coins || 0);
+		localStorage.setItem('currentUserAvatar', user.avatar_url || '');
+		localStorage.setItem('currentUserBgColor', user.avatar_bg || '');
+		console.log('✅ Sesión guardada con inventario:', inventory);
+	};
+
 	document.getElementById('login-btn').addEventListener('click', async () => {
-		const username = document.getElementById('login-username').value;
+		const identifier = document.getElementById('login-username').value?.trim();
 		const password = document.getElementById('login-password').value;
-		if (!username || !password) {
+		if (!identifier || !password) {
 			alert('Por favor completa todos los campos');
 			return;
 		}
 		try {
-			const savedCoins = localStorage.getItem(`coins_${username}`) || '1000';
-			memoryState.currentUser = username;
-			memoryState.currentUserCoins = parseInt(savedCoins);
-			localStorage.setItem('currentUser', username);
-			localStorage.setItem('currentUserCoins', savedCoins);
+			const response = await makeRequest('/auth/login', 'POST', { email: identifier, password });
+			if (response.error) {
+				alert(response.error);
+				return;
+			}
+			persistSession(response.user, response.inventory);
 			navigateTo('/main');
-			const lu = document.getElementById('login-username');
-			const lp = document.getElementById('login-password');
-			if (lu) lu.value = '';
-			if (lp) lp.value = '';
 		} catch (error) {
+			console.error('Error al iniciar sesión:', error);
 			alert('Error al conectar con el servidor');
 		}
 	});
 
 	document.getElementById('register-btn').addEventListener('click', async () => {
-		const name = document.getElementById('register-name').value;
-		const email = document.getElementById('register-email').value;
+		const name = document.getElementById('register-name').value?.trim();
+		const email = document.getElementById('register-email').value?.trim();
 		const password = document.getElementById('register-password').value;
 		const confirmPassword = document.getElementById('register-confirm-password').value;
 
@@ -175,38 +189,20 @@ export default function renderScreen1() {
 		}
 
 		try {
-			const response = await fetch('http://localhost:5050/users', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					name: name,
-					email: email,
-					username: name,
-					password: password,
-				}),
+			const response = await makeRequest('/auth/register', 'POST', {
+				name,
+				username: name,
+				email,
+				password,
 			});
 
-			const result = await response.json();
-
-			if (result.success) {
-				memoryState.currentUser = name;
-				memoryState.currentUserCoins = 1000;
-				localStorage.setItem('currentUser', name);
-				localStorage.setItem(`coins_${name}`, '1000');
-				localStorage.setItem('currentUserCoins', '1000');
-				navigateTo('/main');
-
-				const rn = document.getElementById('register-name');
-				const re = document.getElementById('register-email');
-				const rp = document.getElementById('register-password');
-				const rcp = document.getElementById('register-confirm-password');
-				if (rn) rn.value = '';
-				if (re) re.value = '';
-				if (rp) rp.value = '';
-				if (rcp) rcp.value = '';
-			} else {
-				alert(result.error || 'Error al crear el usuario');
+			if (response.error) {
+				alert(response.error || 'Error al crear el usuario');
+				return;
 			}
+
+			persistSession(response.user, []);
+			navigateTo('/main');
 		} catch (error) {
 			console.error('Error al registrar usuario:', error);
 			alert('Error al conectar con el servidor');

@@ -184,7 +184,7 @@ Ver `database-schemas.sql` para la estructura completa de todas las tablas.
 - **Frontend**: HTML5, CSS3, JavaScript (ES6+)
 - **Backend**: Node.js, Express.js
 - **Base de datos**: Supabase (PostgreSQL)
-- **Tiempo real**: Socket.IO
+- **Tiempo real**: RealTime Supabase
 - **Mapas**: Leaflet.js
 - **Estilos**: CSS vanilla
 

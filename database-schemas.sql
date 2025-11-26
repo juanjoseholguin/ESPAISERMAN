@@ -46,6 +46,25 @@ CREATE INDEX IF NOT EXISTS idx_questions_category_id ON questions(category_id);
 CREATE INDEX IF NOT EXISTS idx_questions_category__id ON questions(category__id);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
+-- Tabla: booster
+-- Descripción: Catálogo de potenciadores disponibles en la tienda
+CREATE TABLE IF NOT EXISTS booster (
+    id BIGSERIAL PRIMARY KEY,
+    booster_name TEXT NOT NULL,
+    booster_hability TEXT,
+    booster_description TEXT,
+    booster_price NUMERIC NOT NULL DEFAULT 200
+);
+
+-- Tabla: boosters_per_user
+-- Descripción: Inventario de potenciadores comprados por cada usuario
+CREATE TABLE IF NOT EXISTS boosters_per_user (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    booster_id BIGINT REFERENCES booster(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Comentarios en las tablas
 COMMENT ON TABLE users IS 'Tabla de usuarios del sistema Espaiserman';
 COMMENT ON TABLE question_category IS 'Categorías de preguntas disponibles en el juego';
@@ -94,6 +113,14 @@ INSERT INTO question_category (category, description) VALUES
     ('Deportes', 'Preguntas sobre deportes'),
     ('Ciencia', 'Preguntas sobre ciencia y tecnología')
 ON CONFLICT (category) DO NOTHING;
+
+-- Insertar potenciadores básicos
+INSERT INTO booster (booster_name, booster_hability, booster_description, booster_price) VALUES
+    ('Empanadirri', 'Agrega tiempo', 'Agrega 10 segundos directamente al reloj', 200),
+    ('Media', 'Congela el tiempo', 'Suma 5 segundos y congela el reloj durante 5 segundos', 200),
+    ('Chichaghrrrom', 'Duplica puntos', 'Duplica las monedas del siguiente acierto (200 en vez de 100)', 200),
+    ('Café', 'Acelera el reloj', 'Reduce 10 segundos al reloj para apurarte', 200)
+ON CONFLICT DO NOTHING;
 
 -- ============================================
 -- NOTAS IMPORTANTES
