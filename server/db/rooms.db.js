@@ -11,10 +11,10 @@ function generateRoomCode() {
 }
 
 // Crear una sala en admin_room
-async function createRoom(adminUserId, categoryId, maxParticipants, timePerQuestion) {
+async function createRoom(adminUserId, categoryId, maxParticipants, timePerQuestion, mapPoints = null) {
   try {
     const roomPin = generateRoomCode();
-    console.log(`🔨 Creating room with PIN: "${roomPin}" (type: ${typeof roomPin}), adminUserId: ${adminUserId}, categoryId: ${categoryId}, maxParticipants: ${maxParticipants}, timePerQuestion: ${timePerQuestion}`);
+    console.log(`🔨 Creating room with PIN: "${roomPin}" (type: ${typeof roomPin}), adminUserId: ${adminUserId}, categoryId: ${categoryId}, maxParticipants: ${maxParticipants}, timePerQuestion: ${timePerQuestion}, mapPoints: ${mapPoints?.length || 0} puntos`);
     
     const insertData = {
       room_pin: String(roomPin).trim().toUpperCase(),
@@ -24,6 +24,10 @@ async function createRoom(adminUserId, categoryId, maxParticipants, timePerQuest
       time_per_question: timePerQuestion,
       room_status: false
     };
+
+    if (mapPoints && Array.isArray(mapPoints) && mapPoints.length > 0) {
+      insertData.map_points = mapPoints;
+    }
     
     console.log(`📤 Inserting room data:`, insertData);
     

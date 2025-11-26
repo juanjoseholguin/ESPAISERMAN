@@ -15,6 +15,21 @@ export default async function renderDistributeQuestions({ category, participants
           <p style="text-align:center; color:#666; margin-bottom:16px;">Visualiza el campus de Icesi</p>
         </div>
 
+        <div style="background:rgba(255,255,255,0.95); border-radius:16px; padding:16px; margin:0 16px 16px;">
+          <label style="display:block; color:#1e3a8a; font-weight:600; margin-bottom:8px; font-size:14px;">Cantidad de preguntas:</label>
+          <select id="num-questions" class="form-input" style="width:100%; padding:12px; border:2px solid #1e3a8a; border-radius:12px; font-size:16px; background:white;">
+            <option value="2">2 preguntas</option>
+            <option value="3">3 preguntas</option>
+            <option value="4">4 preguntas</option>
+            <option value="5" selected>5 preguntas</option>
+            <option value="6">6 preguntas</option>
+            <option value="7">7 preguntas</option>
+            <option value="8">8 preguntas</option>
+            <option value="9">9 preguntas</option>
+            <option value="10">10 preguntas</option>
+          </select>
+        </div>
+
         <div id="map" style="width:100%; height:400px; border-radius:16px; overflow:hidden; margin:16px 0; touch-action: pan-x pan-y;"></div>
 
         <div style="margin:16px 0; text-align:center;">
@@ -39,7 +54,7 @@ export default async function renderDistributeQuestions({ category, participants
 			let response;
 
 			try {
-				response = await fetch(`http://localhost:5050/questions/category/${category}`);
+				response = await fetch(`${window.location.origin}/questions/category/${category}`);
 				questions = await response.json();
 			} catch (fetchError) {
 				console.warn('Failed to fetch questions from server, using mock:', fetchError);
@@ -55,18 +70,40 @@ export default async function renderDistributeQuestions({ category, participants
 
 			console.log(`Found ${questions.length} questions for category ${category}`);
 
-			const selectedQuestions = Array.isArray(questions) ? questions.slice(0, 5) : [];
+			const numQuestions = parseInt(document.getElementById('num-questions')?.value || '5', 10);
+			const selectedQuestions = Array.isArray(questions) ? questions.slice(0, numQuestions) : [];
 
 			console.log('Selected questions count:', selectedQuestions.length);
 
-			// Crear sala usando API
 			try {
 				const { createRoomAPI } = await import('../services/roomsRealtime.js');
+
+				let mapPoints = window.customMapPoints;
+				if (!mapPoints || mapPoints.length !== numQuestions) {
+					const defaultNames = [
+						'Edificio A', 'Biblioteca', 'Cafetería', 'Auditorio', 'Laboratorios',
+						'Gimnasio', 'Parqueadero', 'Oficinas', 'Aulas', 'Comedor'
+					];
+					const defaultCoords = [
+						[3.3435, -76.533], [3.3438, -76.5332], [3.3442, -76.5328], [3.3439, -76.5325], [3.3445, -76.533],
+						[3.3440, -76.5335], [3.3430, -76.5325], [3.3448, -76.5322], [3.3432, -76.5338], [3.3443, -76.5320]
+					];
+					mapPoints = [];
+					for (let i = 0; i < numQuestions; i++) {
+						mapPoints.push({
+							name: defaultNames[i] || `Punto ${i + 1}`,
+							coords: defaultCoords[i] || [3.344 + (i * 0.0005), -76.533 + (i * 0.0005)],
+							questionNumber: i + 1
+						});
+					}
+				}
+
 				const roomData = await createRoomAPI(
 					window.memoryState.currentUserId,
 					parseInt(category, 10),
 					participants,
-					timePerQuestion
+					timePerQuestion,
+					mapPoints
 				);
 
 				if (!roomData || !roomData.room_pin) {
@@ -76,17 +113,15 @@ export default async function renderDistributeQuestions({ category, participants
 				const code = roomData.room_pin;
 				console.log(`✅ Sala creada con código: ${code}`);
 				console.log(`📦 Guardando ${selectedQuestions.length} preguntas`);
-				
+
 				window.roomQuestions = selectedQuestions;
 				window.roomTimePerQuestion = timePerQuestion;
-				window.currentQuestionIndex = 1;
-				localStorage.removeItem(`room_${code}_questionIndex`);
-				localStorage.setItem(`room_${code}_questionIndex`, '1');
-				console.log('🔄 Contador de preguntas reiniciado a 1 para nueva sala');
-				
-				// Esperar un momento para que la sala se guarde completamente
+
+				window.roomMapPoints = mapPoints;
+				console.log(`📍 ${mapPoints.length} puntos guardados:`, window.roomMapPoints);
+
 				await new Promise(resolve => setTimeout(resolve, 300));
-				
+
 				navigateTo('/lobby', { code, category, participants, timePerQuestion });
 			} catch (error) {
 				console.error('Error creating room:', error);
@@ -98,56 +133,171 @@ export default async function renderDistributeQuestions({ category, participants
 		}
 	});
 
+	let currentMap = null;
+	let currentMarkers = [];
+	let currentPoints = [];
+
 	setTimeout(() => {
-		initMap(category);
+		const numQuestions = parseInt(document.getElementById('num-questions')?.value || '5', 10);
+		initMap(category, numQuestions);
+
+		const numQuestionsSelect = document.getElementById('num-questions');
+		if (numQuestionsSelect) {
+			numQuestionsSelect.addEventListener('change', (e) => {
+				const newNum = parseInt(e.target.value, 10);
+				updateMapPoints(newNum);
+			});
+		}
 	}, 200);
-}
 
-function initMap(category) {
-	const mapDiv = document.getElementById('map');
-	if (!mapDiv || !window.L) return;
+	function generateDefaultPoints(numPoints) {
+		const defaultNames = [
+			'Edificio A', 'Biblioteca', 'Cafetería', 'Auditorio', 'Laboratorios',
+			'Gimnasio', 'Parqueadero', 'Oficinas', 'Aulas', 'Comedor'
+		];
 
-	const icesiCoords = [3.344, -76.5329];
+		const defaultCoords = [
+			[3.3435, -76.533], [3.3438, -76.5332], [3.3442, -76.5328], [3.3439, -76.5325], [3.3445, -76.533],
+			[3.3440, -76.5335], [3.3430, -76.5325], [3.3448, -76.5322], [3.3432, -76.5338], [3.3443, -76.5320]
+		];
 
-	const map = L.map(mapDiv, {
-		dragging: true,
-		touchZoom: true,
-		scrollWheelZoom: false,
-		doubleClickZoom: true,
-		boxZoom: false,
-		keyboard: false,
-	}).setView(icesiCoords, 17);
+		const points = [];
+		for (let i = 0; i < numPoints; i++) {
+			points.push({
+				name: defaultNames[i] || `Punto ${i + 1}`,
+				coords: defaultCoords[i] || [3.344 + (i * 0.0005), -76.533 + (i * 0.0005)],
+				questionNumber: i + 1
+			});
+		}
+		return points;
+	}
 
-	map.leaflet = true;
+	function updateMapPoints(numPoints) {
+		if (!currentMap || !window.L) return;
 
-	L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-		attribution: '© OpenStreetMap contributors',
-	}).addTo(map);
+		currentMarkers.forEach(marker => {
+			currentMap.removeLayer(marker);
+		});
+		currentMarkers = [];
 
-	const points = [
-		{ name: 'Edificio A', coords: [3.3435, -76.533] },
-		{ name: 'Biblioteca', coords: [3.3438, -76.5332] },
-		{ name: 'Cafetería', coords: [3.3442, -76.5328] },
-		{ name: 'Auditorio', coords: [3.3439, -76.5325] },
-		{ name: 'Laboratorios', coords: [3.3445, -76.533] },
-	];
+		currentPoints = generateDefaultPoints(numPoints);
+		window.customMapPoints = currentPoints.map(p => ({ ...p }));
 
-	points.forEach((point, idx) => {
-		const icon = L.divIcon({
-			className: 'custom-question-marker',
-			html: `<div style="background-color: #FFE28A; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid #1e3a8a; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"><span style="color: #1e3a8a; font-weight: bold; font-size: 16px;">${
-				idx + 1
-			}</span></div>`,
-			iconSize: [36, 36],
-			iconAnchor: [18, 18],
+		currentPoints.forEach((point, idx) => {
+			const icon = L.divIcon({
+				className: 'custom-question-marker',
+				html: `<div style="background-color: #FFE28A; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid #1e3a8a; box-shadow: 0 2px 8px rgba(0,0,0,0.3); cursor: move;"><span style="color: #1e3a8a; font-weight: bold; font-size: 16px;">${
+					idx + 1
+				}</span></div>`,
+				iconSize: [36, 36],
+				iconAnchor: [18, 18],
+			});
+
+			const marker = L.marker(point.coords, {
+				icon: icon,
+				draggable: true
+			}).addTo(currentMap);
+
+			setupMarker(marker, point, idx);
+			currentMarkers.push(marker);
 		});
 
-		const marker = L.marker(point.coords, { icon: icon }).addTo(map).bindPopup(`
-        <div style="text-align:center; padding:8px; min-width:120px;">
-          <strong style="font-size:16px; color:#1e3a8a;">${point.name}</strong><br/>
-          <small style="color:#666;">Pregunta ${idx + 1}</small><br/>
-          <small style="color:#666;">${category || 'Sin categoría'}</small>
-        </div>
-      `);
-	});
+		window.mapMarkers = currentMarkers;
+		window.mapPoints = currentPoints;
+	}
+
+	function initMap(category, numQuestions = 5) {
+		const mapDiv = document.getElementById('map');
+		if (!mapDiv || !window.L) return;
+
+		const icesiCoords = [3.344, -76.5329];
+
+		const map = L.map(mapDiv, {
+			dragging: true,
+			touchZoom: true,
+			scrollWheelZoom: false,
+			doubleClickZoom: true,
+			boxZoom: false,
+			keyboard: false,
+		}).setView(icesiCoords, 17);
+
+		map.leaflet = true;
+		currentMap = map;
+
+		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			attribution: '© OpenStreetMap contributors',
+		}).addTo(map);
+
+		currentPoints = generateDefaultPoints(numQuestions);
+		window.customMapPoints = currentPoints.map(p => ({ ...p }));
+
+		currentPoints.forEach((point, idx) => {
+			const icon = L.divIcon({
+				className: 'custom-question-marker',
+				html: `<div style="background-color: #FFE28A; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid #1e3a8a; box-shadow: 0 2px 8px rgba(0,0,0,0.3); cursor: move;"><span style="color: #1e3a8a; font-weight: bold; font-size: 16px;">${
+					idx + 1
+				}</span></div>`,
+				iconSize: [36, 36],
+				iconAnchor: [18, 18],
+			});
+
+			const marker = L.marker(point.coords, {
+				icon: icon,
+				draggable: true
+			}).addTo(map);
+
+			setupMarker(marker, point, idx);
+			currentMarkers.push(marker);
+		});
+
+		window.mapMarkers = currentMarkers;
+		window.mapPoints = currentPoints;
+	}
+
+	function setupMarker(marker, point, idx) {
+
+		const popupContent = document.createElement('div');
+		popupContent.style.cssText = 'text-align:center; padding:8px; min-width:180px;';
+		popupContent.innerHTML = `
+			<strong style="font-size:16px; color:#1e3a8a; display:block; margin-bottom:8px;">Pregunta ${idx + 1}</strong>
+			<input type="text" id="point-name-${idx}" value="${point.name}" style="width:100%; padding:6px; border:2px solid #1e3a8a; border-radius:8px; font-size:14px; margin-bottom:8px; text-align:center;">
+			<button id="save-name-${idx}" style="background:#11A36B; color:white; border:none; padding:6px 12px; border-radius:8px; font-size:12px; cursor:pointer; width:100%;">Guardar nombre</button>
+			<small style="color:#666; display:block; margin-top:8px;">Arrastra el punto para moverlo</small>
+		`;
+
+		marker.bindPopup(popupContent);
+
+		setTimeout(() => {
+			const saveBtn = document.getElementById(`save-name-${idx}`);
+			const nameInput = document.getElementById(`point-name-${idx}`);
+
+			if (saveBtn && nameInput) {
+				saveBtn.addEventListener('click', () => {
+					const newName = nameInput.value.trim() || point.name;
+					currentPoints[idx].name = newName;
+					window.customMapPoints[idx].name = newName;
+					marker.getPopup().setContent(createPopupContent(idx, newName));
+					marker.openPopup();
+				});
+			}
+		}, 100);
+
+		marker.on('dragend', (e) => {
+			const newCoords = marker.getLatLng();
+			currentPoints[idx].coords = [newCoords.lat, newCoords.lng];
+			window.customMapPoints[idx].coords = [newCoords.lat, newCoords.lng];
+			console.log(`Punto ${idx + 1} movido a:`, newCoords.lat, newCoords.lng);
+		});
+	}
+
+	function createPopupContent(idx, name) {
+		return `
+			<div style="text-align:center; padding:8px; min-width:180px;">
+				<strong style="font-size:16px; color:#1e3a8a; display:block; margin-bottom:8px;">Pregunta ${idx + 1}</strong>
+				<input type="text" id="point-name-${idx}" value="${name}" style="width:100%; padding:6px; border:2px solid #1e3a8a; border-radius:8px; font-size:14px; margin-bottom:8px; text-align:center;">
+				<button id="save-name-${idx}" style="background:#11A36B; color:white; border:none; padding:6px 12px; border-radius:8px; font-size:12px; cursor:pointer; width:100%;">Guardar nombre</button>
+				<small style="color:#666; display:block; margin-top:8px;">Arrastra el punto para moverlo</small>
+			</div>
+		`;
+	}
 }

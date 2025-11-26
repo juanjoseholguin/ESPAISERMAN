@@ -13,15 +13,15 @@ const {
 // Crear una sala
 const createRoomController = async (req, res) => {
   try {
-    const { adminUserId, categoryId, maxParticipants, timePerQuestion } = req.body;
+    const { adminUserId, categoryId, maxParticipants, timePerQuestion, mapPoints } = req.body;
 
-    console.log(`📥 POST /rooms requested:`, { adminUserId, categoryId, maxParticipants, timePerQuestion });
+    console.log(`📥 POST /rooms requested:`, { adminUserId, categoryId, maxParticipants, timePerQuestion, mapPointsCount: mapPoints?.length || 0 });
 
     if (!adminUserId || !categoryId || !maxParticipants || !timePerQuestion) {
       return res.status(400).json({ error: 'Faltan datos requeridos' });
     }
 
-    const result = await createRoom(adminUserId, categoryId, maxParticipants, timePerQuestion);
+    const result = await createRoom(adminUserId, categoryId, maxParticipants, timePerQuestion, mapPoints);
     
     if (result.success) {
       console.log(`✅ Room created successfully, returning:`, result.data);

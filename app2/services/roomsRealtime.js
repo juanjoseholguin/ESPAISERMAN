@@ -91,7 +91,8 @@ export async function loadRoomState(roomPin) {
       category: roomData.room_category_id,
       maxParticipants: roomData.room_size,
       timePerQuestion: roomData.time_per_question,
-      room_status: roomData.room_status || false
+      room_status: roomData.room_status || false,
+      map_points: roomData.map_points || null
     };
     
     console.log('✅ Transformed room state (app2):', transformedState);
@@ -108,18 +109,19 @@ export async function loadRoomState(roomPin) {
 }
 
 // Crear una sala
-export async function createRoomAPI(adminUserId, categoryId, maxParticipants, timePerQuestion) {
+export async function createRoomAPI(adminUserId, categoryId, maxParticipants, timePerQuestion, mapPoints = null) {
   try {
-    console.log('📤 Creating room via API:', { adminUserId, categoryId, maxParticipants, timePerQuestion });
+    console.log('📤 Creating room via API:', { adminUserId, categoryId, maxParticipants, timePerQuestion, mapPointsCount: mapPoints?.length || 0 });
     
-    const response = await fetch('http://localhost:5050/rooms', {
+    const response = await fetch(`${window.location.origin}/rooms`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         adminUserId,
         categoryId,
         maxParticipants,
-        timePerQuestion
+        timePerQuestion,
+        mapPoints: mapPoints || null
       })
     });
 

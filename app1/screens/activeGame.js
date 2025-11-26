@@ -1,4 +1,24 @@
 import { navigateTo, makeRequest, memoryState, updateCoins } from '../app.js';
+import {
+	initGeolocation,
+	onProximityChange,
+	onLocationUpdate,
+	stopGeolocation,
+	getCurrentLocation,
+	getPoints,
+	setCustomPoints,
+} from '../services/geolocation.service.js';
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+	const R = 6371e3;
+	const φ1 = (lat1 * Math.PI) / 180;
+	const φ2 = (lat2 * Math.PI) / 180;
+	const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+	const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+	const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+	const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+	return R * c;
+}
 
 // Función para suscribirse a cambios en el inventario usando Supabase Realtime
 function setupInventoryRealtime(userId) {
@@ -88,6 +108,296 @@ const boosterDescriptions = {
 	chicharron: 'Duplica las monedas del siguiente acierto (200 en vez de 100).',
 	cafe: 'Reduce 10 segundos al reloj para apurarte.',
 };
+
+function renderIntermedioScreen({ roomCode, currentQuestion, totalQuestions, formattedInventory, playerName, playerScore, isButtonEnabled = false, distanceToPoint = null }) {
+	const points = window.roomMapPoints && Array.isArray(window.roomMapPoints)
+		? window.roomMapPoints
+		: getPoints();
+	const currentPoint = points.find(p => p.questionNumber === currentQuestion) || points[currentQuestion - 1] || points[0];
+	const powerupsBanner = renderPowerupsBar(formattedInventory);
+
+	const buttonStyle = isButtonEnabled
+		? 'background:#8B5CF6; border-color:#6D28D9; cursor:pointer; opacity:1;'
+		: 'background:#9CA3AF; border-color:#6B7280; cursor:not-allowed; opacity:0.5;';
+
+	const distanceText = distanceToPoint !== null
+		? `Estás a ${Math.round(distanceToPoint)}m de la siguiente pregunta (${currentQuestion}), panita`
+		: 'Buscando tu ubicación...';
+
+	return `
+    <div class="screen active">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px;">
+        <div style="display:flex; align-items:center; gap:6px; background:#FFE28A; padding:6px 12px; border-radius:12px;">
+          <img src="/assets/images/Group 19453.png" alt="coin" style="width:20px; height:20px;">
+          <span style="font-weight:800; color:#1e3a8a; font-size:15px;">${playerScore || 0}</span>
+        </div>
+        <div style="font-weight:800; color:#1e3a8a; font-size:14px;">${playerName || 'Jugador'}</div>
+      </div>
+
+      ${powerupsBanner}
+
+      <div style="background:linear-gradient(135deg, #FFE28A 0%, #F9D648 100%); min-height:calc(100vh - 200px); padding:24px 16px; text-align:center;">
+        <h1 style="color:#1e3a8a; font-size:28px; font-weight:800; margin-bottom:16px;">Así va la cosa, parceros</h1>
+
+        <div style="background:rgba(255,255,255,0.95); border-radius:16px; padding:16px; margin-bottom:16px;">
+          <p style="color:#1e3a8a; font-size:16px; font-weight:600; margin:0;">¡No sea aguevado, mijo! Póngase las pilas y vaya al siguiente punto</p>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.95); border-radius:16px; padding:12px; margin-bottom:16px;">
+          <h3 style="text-align:center; color:#1e3a8a; font-size:18px; margin-bottom:8px; font-weight:800;">🗺️ Mapa</h3>
+          <div id="player-map" style="width:100%; height:250px; border-radius:12px; overflow:hidden; background:#e5e7eb;"></div>
+        </div>
+
+        <div id="distance-message" style="background:rgba(255,255,255,0.95); border-radius:16px; padding:12px; margin-bottom:16px;">
+          <p style="color:#1e3a8a; font-size:16px; font-weight:600; margin:0;">${distanceText}</p>
+          <p style="color:#1e3a8a; font-size:14px; font-weight:600; margin-top:4px;">📍 ${currentPoint.name}</p>
+        </div>
+
+        <button id="btn-answer-question" ${isButtonEnabled ? '' : 'disabled'} style="${buttonStyle} padding:16px 32px; border-radius:16px; color:white; font-size:18px; font-weight:bold; border:3px solid; width:100%; max-width:320px; margin:0 auto 16px; display:block;">
+          Responder pregunta
+        </button>
+
+        <button id="btn-enable-location" style="background:#1e3a8a; color:white; padding:12px 24px; border-radius:12px; font-size:14px; font-weight:bold; border:none; width:100%; max-width:320px; margin:0 auto 8px; display:block; cursor:pointer;">
+          📍 Activar Ubicación
+        </button>
+
+        <div style="background:rgba(255,255,255,0.95); border-radius:16px; padding:12px; margin-top:16px;">
+          <p style="color:#1e3a8a; font-size:14px; margin:0;">¡Uy, qué nivel! Está en el segundo puesto, pero Lucho Portuano va punteando. ¡Esto se puso bueno, no afloje.</p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderIntermedioWithGeolocation({ app, roomCode, currentQuestion, totalQuestions, formattedInventory, playerName, playerScore, formattedQuestions, timePerQuestion }) {
+	let isButtonEnabled = false;
+	let distanceToPoint = null;
+	let currentLocation = null;
+
+	app.innerHTML = renderIntermedioScreen({
+		roomCode,
+		currentQuestion,
+		totalQuestions,
+		formattedInventory,
+		playerName,
+		playerScore,
+		isButtonEnabled: false,
+		distanceToPoint: null,
+	});
+
+	if (window.roomMapPoints && Array.isArray(window.roomMapPoints)) {
+		setCustomPoints(window.roomMapPoints);
+		console.log('📍 Usando puntos personalizados del mapa:', window.roomMapPoints);
+	}
+
+	const playerNameForGeo = memoryState.currentUser || 'Jugador';
+	console.log('📍 Iniciando geolocalización para:', { roomCode, playerName: playerNameForGeo });
+
+	setTimeout(() => {
+		initGeolocation(roomCode, playerNameForGeo);
+		window.geolocationActive = true;
+		console.log('✅ Geolocalización iniciada');
+	}, 500);
+
+	let playerMap = null;
+	let playerMarker = null;
+	let questionMarkers = [];
+
+	setTimeout(() => {
+		if (window.L) {
+			initPlayerMap(roomCode, currentQuestion);
+		}
+	}, 600);
+
+	function initPlayerMap(roomCode, currentQuestionNum) {
+		const mapDiv = document.getElementById('player-map');
+		if (!mapDiv || !window.L) return;
+
+		const points = window.roomMapPoints && Array.isArray(window.roomMapPoints)
+			? window.roomMapPoints
+			: getPoints();
+
+		const icesiCoords = [3.344, -76.5329];
+
+		playerMap = L.map(mapDiv, {
+			dragging: true,
+			touchZoom: true,
+			scrollWheelZoom: true,
+			doubleClickZoom: true,
+			boxZoom: false,
+			keyboard: false,
+		}).setView(icesiCoords, 17);
+
+		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			attribution: '© OpenStreetMap contributors',
+		}).addTo(playerMap);
+
+		points.forEach((point, idx) => {
+			const isCurrentQuestion = point.questionNumber === currentQuestionNum;
+			const iconColor = isCurrentQuestion ? '#8B5CF6' : '#FFE28A';
+			const borderColor = isCurrentQuestion ? '#6D28D9' : '#1e3a8a';
+
+			const icon = L.divIcon({
+				className: 'question-marker-player',
+				html: `<div style="background-color: ${iconColor}; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid ${borderColor}; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"><span style="color: #1e3a8a; font-weight: bold; font-size: 16px;">${point.questionNumber || idx + 1}</span></div>`,
+				iconSize: [40, 40],
+				iconAnchor: [20, 20],
+			});
+
+			const marker = L.marker(point.coords, { icon: icon }).addTo(playerMap);
+			marker.bindPopup(`
+				<div style="text-align:center; padding:8px; min-width:120px;">
+					<strong style="font-size:16px; color:#1e3a8a;">${point.name}</strong><br/>
+					<small style="color:#666;">Pregunta ${point.questionNumber || idx + 1}</small>
+					${isCurrentQuestion ? '<br/><small style="color:#8B5CF6; font-weight:bold;">📍 Siguiente</small>' : ''}
+				</div>
+			`);
+			questionMarkers.push(marker);
+		});
+	}
+
+	function updatePlayerLocationOnMap(latitude, longitude) {
+		if (!playerMap || !window.L) return;
+
+		if (playerMarker) {
+			playerMap.removeLayer(playerMarker);
+		}
+
+		const playerIcon = L.divIcon({
+			className: 'player-location-marker',
+			html: `<div style="background-color: #11A36B; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.4);"><span style="color: white; font-weight: bold; font-size: 16px;">👤</span></div>`,
+			iconSize: [32, 32],
+			iconAnchor: [16, 16],
+		});
+
+		playerMarker = L.marker([latitude, longitude], { icon: playerIcon }).addTo(playerMap);
+		playerMarker.bindPopup(`
+			<div style="text-align:center; padding:8px;">
+				<strong style="font-size:14px; color:#1e3a8a;">Tu ubicación</strong>
+			</div>
+		`);
+
+		playerMap.setView([latitude, longitude], 17);
+	}
+
+	onProximityChange(({ isNearPoint, nearestPoint, distance }) => {
+		const expectedQuestionNumber = currentQuestion;
+		const isCorrectPoint = nearestPoint && nearestPoint.questionNumber === expectedQuestionNumber;
+
+		if (isCorrectPoint && isNearPoint) {
+			isButtonEnabled = true;
+			distanceToPoint = distance;
+		} else {
+			isButtonEnabled = false;
+			if (nearestPoint && nearestPoint.questionNumber === expectedQuestionNumber) {
+				distanceToPoint = distance;
+			} else {
+				const points = window.roomMapPoints && Array.isArray(window.roomMapPoints)
+					? window.roomMapPoints
+					: getPoints();
+				const targetPoint = points.find(p => p.questionNumber === expectedQuestionNumber);
+
+				if (targetPoint && currentLocation && currentLocation.latitude && currentLocation.longitude) {
+					distanceToPoint = calculateDistance(
+						currentLocation.latitude,
+						currentLocation.longitude,
+						targetPoint.coords[0],
+						targetPoint.coords[1]
+					);
+				} else if (distance !== null) {
+					distanceToPoint = distance;
+				}
+			}
+		}
+
+		const btn = document.getElementById('btn-answer-question');
+		const distanceMessageEl = document.getElementById('distance-message');
+
+		if (btn) {
+			if (isButtonEnabled) {
+				btn.disabled = false;
+				btn.style.opacity = '1';
+				btn.style.cursor = 'pointer';
+				btn.style.background = '#8B5CF6';
+				btn.style.borderColor = '#6D28D9';
+			} else {
+				btn.disabled = true;
+				btn.style.opacity = '0.5';
+				btn.style.cursor = 'not-allowed';
+				btn.style.background = '#9CA3AF';
+				btn.style.borderColor = '#6B7280';
+			}
+		}
+
+		if (distanceMessageEl && distanceToPoint !== null) {
+			const points = window.roomMapPoints && Array.isArray(window.roomMapPoints)
+				? window.roomMapPoints
+				: getPoints();
+			const currentPoint = points.find(p => p.questionNumber === currentQuestion) || points[currentQuestion - 1] || points[0];
+
+			if (isCorrectPoint && isNearPoint) {
+				distanceMessageEl.innerHTML = `
+					<p style="color:#11A36B; font-size:16px; font-weight:600; margin:0;">¡Estás cerca! A ${Math.round(distanceToPoint)}m de la siguiente pregunta (${currentQuestion}), panita</p>
+					<p style="color:#1e3a8a; font-size:14px; font-weight:600; margin-top:4px;">📍 ${currentPoint.name}</p>
+				`;
+			} else {
+				distanceMessageEl.innerHTML = `
+					<p style="color:#1e3a8a; font-size:16px; font-weight:600; margin:0;">Estás a ${Math.round(distanceToPoint)}m de la siguiente pregunta (${currentQuestion}), panita</p>
+					<p style="color:#1e3a8a; font-size:14px; font-weight:600; margin-top:4px;">📍 ${currentPoint.name}</p>
+				`;
+			}
+		}
+
+		if (currentLocation && currentLocation.latitude && currentLocation.longitude) {
+			updatePlayerLocationOnMap(currentLocation.latitude, currentLocation.longitude);
+		}
+	});
+
+	onLocationUpdate((location) => {
+		currentLocation = location;
+		if (location && location.latitude && location.longitude) {
+			updatePlayerLocationOnMap(location.latitude, location.longitude);
+		}
+	});
+
+	setTimeout(() => {
+		const btn = document.getElementById('btn-answer-question');
+		if (btn) {
+			btn.addEventListener('click', () => {
+				if (!isButtonEnabled) return;
+
+				stopGeolocation();
+				window.geolocationActive = false;
+
+				window.showingQuestion = true;
+
+				renderQuestionScreen({
+					app,
+					roomCode,
+					currentQuestion,
+					formattedQuestions,
+					timePerQuestion,
+					formattedInventory,
+				});
+			});
+		}
+
+		const locationBtn = document.getElementById('btn-enable-location');
+		if (locationBtn) {
+			locationBtn.addEventListener('click', () => {
+				console.log('📍 Botón de ubicación presionado manualmente');
+				const playerNameForGeo = memoryState.currentUser || 'Jugador';
+				initGeolocation(roomCode, playerNameForGeo);
+				window.geolocationActive = true;
+				locationBtn.textContent = '📍 Ubicación activada';
+				locationBtn.style.background = '#11A36B';
+				setTimeout(() => {
+					locationBtn.style.display = 'none';
+				}, 2000);
+			});
+		}
+	}, 100);
+}
 
 export default async function renderActiveGame({ roomCode } = {}) {
 	if (window.gameEnded) {
@@ -200,7 +510,10 @@ export default async function renderActiveGame({ roomCode } = {}) {
 
 	const question = formattedQuestions[currentQuestion - 1];
 
-	// Limpiar suscripción anterior si existe
+	if (window.geolocationActive) {
+		stopGeolocation();
+	}
+
 	if (window.inventoryGameChannel) {
 		window.inventoryGameChannel.unsubscribe();
 	}
@@ -305,12 +618,6 @@ export default async function renderActiveGame({ roomCode } = {}) {
 		}
 	}
 
-	// Configurar Realtime para actualizar inventario durante el juego
-	if (memoryState.currentUserId) {
-		window.inventoryGameChannel = setupInventoryRealtime(memoryState.currentUserId);
-	}
-
-	// Suscribirse a cambios en la sala para detectar finalización
 	let roomSubscription = null;
 	if (roomCode) {
 		const { subscribeToRoom, loadRoomState } = await import('../services/roomsRealtime.js');
@@ -327,6 +634,10 @@ export default async function renderActiveGame({ roomCode } = {}) {
 					window.inventoryGameChannel.unsubscribe();
 					window.inventoryGameChannel = null;
 				}
+				if (window.geolocationActive) {
+					stopGeolocation();
+					window.geolocationActive = false;
+				}
 				if (window.roomCheckInterval) {
 					clearInterval(window.roomCheckInterval);
 					window.roomCheckInterval = null;
@@ -336,6 +647,10 @@ export default async function renderActiveGame({ roomCode } = {}) {
 			}
 		});
 		window.roomSubscription = roomSubscription;
+	}
+
+	if (memoryState.currentUserId) {
+		window.inventoryGameChannel = setupInventoryRealtime(memoryState.currentUserId);
 	}
 
 	let formattedInventory = await formatInventoryList(inventoryResponse);
@@ -368,15 +683,40 @@ export default async function renderActiveGame({ roomCode } = {}) {
 		console.log('✅ Inventario creado desde localStorage:', formattedInventory);
 	}
 
-	const points = [
-		{ name: 'Edificio A', coords: [3.3435, -76.533] },
-		{ name: 'Biblioteca', coords: [3.3438, -76.5332] },
-		{ name: 'Cafetería', coords: [3.3442, -76.5328] },
-		{ name: 'Auditorio', coords: [3.3439, -76.5325] },
-		{ name: 'Laboratorios', coords: [3.3445, -76.533] },
-	];
+	const showIntermedio = window.showingQuestion !== true;
 
-	const currentPoint = points[currentQuestion - 1] || points[0];
+	if (showIntermedio) {
+		renderIntermedioWithGeolocation({
+			app,
+			roomCode,
+			currentQuestion,
+			totalQuestions: formattedQuestions.length,
+			formattedInventory,
+			playerName: memoryState.currentUser || 'Jugador',
+			playerScore: memoryState.currentUserCoins || 0,
+			formattedQuestions,
+			timePerQuestion,
+		});
+		return;
+	}
+
+	renderQuestionScreen({
+		app,
+		roomCode,
+		currentQuestion,
+		formattedQuestions,
+		timePerQuestion,
+		formattedInventory,
+	});
+}
+
+function renderQuestionScreen({ app, roomCode, currentQuestion, formattedQuestions, timePerQuestion, formattedInventory }) {
+	const question = formattedQuestions[currentQuestion - 1];
+
+	const points = window.roomMapPoints && Array.isArray(window.roomMapPoints)
+		? window.roomMapPoints
+		: getPoints();
+	const currentPoint = points.find(p => p.questionNumber === currentQuestion) || points[currentQuestion - 1] || points[0];
 	const powerupsBanner = renderPowerupsBar(formattedInventory);
 
 	app.innerHTML = `
@@ -458,13 +798,6 @@ export default async function renderActiveGame({ roomCode } = {}) {
 			});
 
 			window.questionMarker = L.marker(currentPoint.coords, { icon: icon }).addTo(window.gameMap);
-
-			const userIcon = L.divIcon({
-				className: 'user-location-marker',
-				html: `<div style="background-color: #11A36B; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.4);"></div>`,
-				iconSize: [32, 32],
-				iconAnchor: [16, 16],
-			});
 		}
 
 		const state = {
@@ -544,11 +877,15 @@ export default async function renderActiveGame({ roomCode } = {}) {
 				if (roomCode) {
 					localStorage.removeItem(`room_${roomCode}_questionIndex`);
 				}
-				if (window.inventoryGameChannel) {
-					window.inventoryGameChannel.unsubscribe();
-					window.inventoryGameChannel = null;
-				}
-				navigateTo('/results', { roomCode });
+						if (window.inventoryGameChannel) {
+							window.inventoryGameChannel.unsubscribe();
+							window.inventoryGameChannel = null;
+						}
+						if (window.geolocationActive) {
+							stopGeolocation();
+							window.geolocationActive = false;
+						}
+						navigateTo('/results', { roomCode });
 			}
 		};
 
@@ -860,19 +1197,23 @@ export default async function renderActiveGame({ roomCode } = {}) {
 						window.gameEnded = true;
 						clearInterval(roomCheckInterval);
 						if (state.timer) clearInterval(state.timer);
-						if (window.roomCheckInterval) {
-							clearInterval(window.roomCheckInterval);
-							window.roomCheckInterval = null;
-						}
-						if (window.roomSubscription) {
-							window.roomSubscription.unsubscribe();
-							window.roomSubscription = null;
-						}
-						if (window.inventoryGameChannel) {
-							window.inventoryGameChannel.unsubscribe();
-							window.inventoryGameChannel = null;
-						}
-						navigateTo('/results', { roomCode });
+					if (window.roomCheckInterval) {
+						clearInterval(window.roomCheckInterval);
+						window.roomCheckInterval = null;
+					}
+					if (window.roomSubscription) {
+						window.roomSubscription.unsubscribe();
+						window.roomSubscription = null;
+					}
+					if (window.inventoryGameChannel) {
+						window.inventoryGameChannel.unsubscribe();
+						window.inventoryGameChannel = null;
+					}
+					if (window.geolocationActive) {
+						stopGeolocation();
+						window.geolocationActive = false;
+					}
+					navigateTo('/results', { roomCode });
 					}
 				} catch (error) {
 					console.error('Error verificando estado de sala:', error);
