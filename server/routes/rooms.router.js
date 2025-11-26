@@ -8,7 +8,8 @@ const {
   updatePlayerScoreController,
   startRoomController,
   getRoomResultsController,
-  leaveRoomController
+  leaveRoomController,
+  endRoomController
 } = require('../controllers/rooms.controller');
 
 // Crear sala
@@ -34,6 +35,9 @@ router.get('/rooms/:roomPin/results', getRoomResultsController);
 
 // Salir de una sala
 router.delete('/rooms/:roomPin/players/:userId', leaveRoomController);
+
+// Finalizar sala
+router.post('/rooms/:roomPin/end', endRoomController);
 
 module.exports = router;
 

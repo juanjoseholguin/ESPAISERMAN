@@ -7,15 +7,52 @@ export const renderProfileEdit = async () => {
 
 	if (userId) {
 		try {
+			console.log(`📥 Cargando perfil para usuario ${userId}...`);
 			const response = await makeRequest(`/users/${userId}/profile`, 'GET');
+			console.log('📦 Respuesta del perfil:', response);
+			
 			if (response?.success) {
 				profile = response.user;
 				inventory = response.inventory || [];
+				if (!inventory || inventory.length === 0) {
+					console.warn('⚠️ Inventario vacío en perfil, cargando desde endpoint directo...');
+					const inventoryResponse = await makeRequest(`/users/${userId}/boosters`, 'GET');
+					if (inventoryResponse?.success && inventoryResponse.inventory && Array.isArray(inventoryResponse.inventory)) {
+						inventory = inventoryResponse.inventory;
+					} else if (Array.isArray(inventoryResponse)) {
+						inventory = inventoryResponse;
+					} else if (inventoryResponse?.inventory && Array.isArray(inventoryResponse.inventory)) {
+						inventory = inventoryResponse.inventory;
+					}
+				}
 				memoryState.inventory = inventory;
 				memoryState.currentUserCoins = response.user?.coins ?? memoryState.currentUserCoins;
+				console.log('✅ Perfil cargado:', { profile, inventory: inventory.length, inventoryDetails: inventory.map(i => `${i.booster_name}: x${i.quantity} (id: ${i.booster_id})`) });
+			} else {
+				console.warn('⚠️ Respuesta sin éxito:', response);
+				const inventoryResponse = await makeRequest(`/users/${userId}/boosters`, 'GET');
+				if (inventoryResponse?.success && inventoryResponse.inventory && Array.isArray(inventoryResponse.inventory)) {
+					inventory = inventoryResponse.inventory;
+				} else if (Array.isArray(inventoryResponse)) {
+					inventory = inventoryResponse;
+				} else if (inventoryResponse?.inventory && Array.isArray(inventoryResponse.inventory)) {
+					inventory = inventoryResponse.inventory;
+				}
+				memoryState.inventory = inventory;
+				console.log('✅ Inventario cargado desde endpoint directo:', inventory);
 			}
 		} catch (error) {
-			console.warn('No se pudo cargar el perfil desde el servidor:', error);
+			console.error('❌ Error cargando perfil:', error);
+			try {
+				const inventoryResponse = await makeRequest(`/users/${userId}/boosters`, 'GET');
+				if (inventoryResponse?.success && inventoryResponse.inventory) {
+					inventory = inventoryResponse.inventory;
+					memoryState.inventory = inventory;
+					console.log('✅ Inventario cargado desde fallback:', inventory);
+				}
+			} catch (fallbackError) {
+				console.error('❌ Error en fallback:', fallbackError);
+			}
 		}
 	}
 
@@ -95,9 +132,9 @@ export const renderProfileEdit = async () => {
           </div>
         </div>
 
-        <div class="profile-card" style="margin-top:16px;">
-          <h2 style="margin-top:0; color:#1e3a8a;">Mis potenciadores</h2>
-          <ul style="list-style:none; padding:0; margin:0;">
+        <div class="profile-card" style="margin-top:0;">
+          <h2 style="margin-top:0; margin-bottom:16px; color:#1e3a8a; font-size:20px;">Mis potenciadores</h2>
+          <ul style="list-style:none; padding:0; margin:0; max-height:300px; overflow-y:auto;">
             ${boostersMarkup}
           </ul>
         </div>

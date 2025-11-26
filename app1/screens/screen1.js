@@ -140,7 +140,7 @@ export default function renderScreen1() {
 		memoryState.currentUser = user.username;
 		memoryState.currentUserId = user.id;
 		memoryState.currentUserCoins = user.coins || 0;
-		memoryState.inventory = inventory || [];
+		memoryState.inventory = inventory;
 		memoryState.currentUserAvatar = user.avatar_url;
 		memoryState.currentUserBgColor = user.avatar_bg;
 		localStorage.setItem('currentUser', user.username);
@@ -148,7 +148,6 @@ export default function renderScreen1() {
 		localStorage.setItem('currentUserCoins', user.coins || 0);
 		localStorage.setItem('currentUserAvatar', user.avatar_url || '');
 		localStorage.setItem('currentUserBgColor', user.avatar_bg || '');
-		console.log('✅ Sesión guardada con inventario:', inventory);
 	};
 
 	document.getElementById('login-btn').addEventListener('click', async () => {

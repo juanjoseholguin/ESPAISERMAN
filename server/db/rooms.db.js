@@ -255,11 +255,9 @@ async function updatePlayerScore(roomPin, userId, points) {
 // Iniciar sala (cambiar room_status a true)
 async function startRoom(roomPin, adminUserId) {
   try {
-    // Limpiar el roomPin
     const cleanRoomPin = String(roomPin).trim().toUpperCase();
     console.log(`🚀 Starting room: "${cleanRoomPin}", adminUserId: ${adminUserId}`);
     
-    // Verificar que el usuario es el admin
     const { data: room, error: roomError } = await supabase
       .from('admin_room')
       .select('*')
@@ -290,6 +288,43 @@ async function startRoom(roomPin, adminUserId) {
     return { success: true, data };
   } catch (error) {
     console.error('Error starting room:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+async function endRoom(roomPin, adminUserId) {
+  try {
+    const cleanRoomPin = String(roomPin).trim().toUpperCase();
+    console.log(`🛑 Ending room: "${cleanRoomPin}", adminUserId: ${adminUserId}`);
+    
+    const { data: room, error: roomError } = await supabase
+      .from('admin_room')
+      .select('*')
+      .eq('room_pin', cleanRoomPin)
+      .eq('admin_user_id', adminUserId)
+      .single();
+
+    if (roomError || !room) {
+      console.error(`❌ Room ${cleanRoomPin} not found or user ${adminUserId} is not admin`);
+      return { success: false, error: 'No tienes permisos para finalizar esta sala o la sala no existe' };
+    }
+
+    const { data, error } = await supabase
+      .from('admin_room')
+      .update({ room_status: false })
+      .eq('room_pin', cleanRoomPin)
+      .select()
+      .single();
+
+    if (error) {
+      console.error(`❌ Error ending room:`, error);
+      throw error;
+    }
+    
+    console.log(`✅ Room ${cleanRoomPin} ended successfully:`, data);
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error ending room:', error);
     return { success: false, error: error.message };
   }
 }
@@ -337,6 +372,7 @@ module.exports = {
   startRoom,
   getRoomResults,
   leaveRoom,
+  endRoom,
   generateRoomCode
 };
 

@@ -79,6 +79,10 @@ export default async function renderDistributeQuestions({ category, participants
 				
 				window.roomQuestions = selectedQuestions;
 				window.roomTimePerQuestion = timePerQuestion;
+				window.currentQuestionIndex = 1;
+				localStorage.removeItem(`room_${code}_questionIndex`);
+				localStorage.setItem(`room_${code}_questionIndex`, '1');
+				console.log('🔄 Contador de preguntas reiniciado a 1 para nueva sala');
 				
 				// Esperar un momento para que la sala se guarde completamente
 				await new Promise(resolve => setTimeout(resolve, 300));

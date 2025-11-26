@@ -43,7 +43,15 @@ export default async function renderActiveGame({ roomCode } = {}) {
 			: '';
 
 	// Obtener el número de pregunta actual (por defecto 1)
-	const currentQuestion = window.currentQuestionIndex || 1;
+	let currentQuestion = window.currentQuestionIndex || 1;
+	if (roomCode) {
+		const savedIndex = localStorage.getItem(`room_${roomCode}_questionIndex`);
+		if (savedIndex) {
+			currentQuestion = parseInt(savedIndex, 10);
+			window.currentQuestionIndex = currentQuestion;
+			console.log(`📖 Pregunta cargada desde localStorage: ${currentQuestion}`);
+		}
+	}
 	const totalQuestions = window.roomQuestions?.length || 5;
 
 	app.innerHTML = `
@@ -58,7 +66,7 @@ export default async function renderActiveGame({ roomCode } = {}) {
 
         <div style="display:flex; justify-content:center; margin-top:-12px;">
           <div style="background:rgba(255,226,138,0.95); padding:8px 16px; border-radius:16px;">
-            <span style="font-weight:800; color:#1e3a8a; font-size:18px;">Pregunta ${currentQuestion} de ${totalQuestions}</span>
+            <span id="question-progress" style="font-weight:800; color:#1e3a8a; font-size:18px;">Pregunta ${currentQuestion} de ${totalQuestions}</span>
           </div>
         </div>
 
@@ -93,20 +101,75 @@ export default async function renderActiveGame({ roomCode } = {}) {
 			renderScores(currentPlayers);
 		}
 		
-		// Suscribirse a cambios en tiempo real
+			let lastQuestionIndex = currentQuestion;
+		
+		const updateQuestionDisplay = () => {
+			let newQuestionIndex = window.currentQuestionIndex || 1;
+			if (roomCode) {
+				const savedIndex = localStorage.getItem(`room_${roomCode}_questionIndex`);
+				if (savedIndex) {
+					const parsedIndex = parseInt(savedIndex, 10);
+					if (parsedIndex !== newQuestionIndex) {
+						newQuestionIndex = parsedIndex;
+						window.currentQuestionIndex = newQuestionIndex;
+					}
+				}
+			}
+			const totalQuestions = window.roomQuestions?.length || 5;
+			if (newQuestionIndex !== lastQuestionIndex) {
+				lastQuestionIndex = newQuestionIndex;
+				const questionProgressEl = document.getElementById('question-progress');
+				if (questionProgressEl) {
+					questionProgressEl.textContent = `Pregunta ${newQuestionIndex} de ${totalQuestions}`;
+					console.log(`🔄 Pregunta actualizada a ${newQuestionIndex} de ${totalQuestions}`);
+				} else {
+					const questionLabel = document.querySelector('[style*="Pregunta"]');
+					if (questionLabel) {
+						questionLabel.textContent = `Pregunta ${newQuestionIndex} de ${totalQuestions}`;
+						console.log(`🔄 Pregunta actualizada a ${newQuestionIndex} de ${totalQuestions}`);
+					}
+				}
+			}
+		};
+		
+		// Listener para cambios en localStorage
+		const storageListener = (e) => {
+			if (e.key === `room_${roomCode}_questionIndex`) {
+				console.log('📢 Cambio detectado en localStorage para pregunta:', e.newValue);
+				updateQuestionDisplay();
+			}
+		};
+		window.addEventListener('storage', storageListener);
+		
+		const questionCheckInterval = setInterval(updateQuestionDisplay, 500);
+		
 		subscription = subscribeToRoom(roomCode, async (state) => {
 			console.log('🔄 Cambio detectado en sala (app2 activeGame), recargando estado...');
-			// Recargar el estado completo para obtener los scores actualizados
 			const updatedState = await loadRoomState(roomCode);
-			if (updatedState && updatedState.players) {
-				currentPlayers = updatedState.players.map((p) => ({ 
-					name: p.player_name || p.name || 'Jugador', 
-					score: p.score || 0 
-				}));
-				console.log('📊 Players updated:', currentPlayers);
-				renderScores(currentPlayers);
+			if (updatedState) {
+				if (updatedState.players) {
+					currentPlayers = updatedState.players.map((p) => ({ 
+						name: p.player_name || p.name || 'Jugador', 
+						score: p.score || 0 
+					}));
+					console.log('📊 Players updated:', currentPlayers);
+					renderScores(currentPlayers);
+				}
+				updateQuestionDisplay();
 			}
 		});
+		
+		window.questionCheckInterval = questionCheckInterval;
+		window.storageListener = storageListener;
+		
+		setTimeout(() => {
+			document.getElementById('back-active').addEventListener('click', () => {
+				if (subscription) subscription.unsubscribe();
+				if (window.questionCheckInterval) clearInterval(window.questionCheckInterval);
+				if (window.storageListener) window.removeEventListener('storage', window.storageListener);
+				navigateTo('/lobby', { code: roomCode });
+			});
+		}, 100);
 	}
 
 	function renderScores(players = []) {
@@ -140,8 +203,18 @@ export default async function renderActiveGame({ roomCode } = {}) {
 			navigateTo('/lobby', { code: roomCode });
 		});
 
-		document.getElementById('btn-end-game').addEventListener('click', () => {
-			navigateTo('/results', { results: currentPlayers });
+		document.getElementById('btn-end-game').addEventListener('click', async () => {
+			if (confirm('¿Estás seguro de que quieres finalizar la partida? Todos los jugadores serán redirigidos a los resultados.')) {
+				try {
+					const { endRoomAPI } = await import('../services/roomsRealtime.js');
+					await endRoomAPI(roomCode, window.memoryState.currentUserId);
+					navigateTo('/results', { results: currentPlayers });
+				} catch (error) {
+					console.error('Error finalizando partida:', error);
+					alert('Error al finalizar la partida. Redirigiendo de todas formas...');
+					navigateTo('/results', { results: currentPlayers });
+				}
+			}
 		});
 	}, 100);
 }

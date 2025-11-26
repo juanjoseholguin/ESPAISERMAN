@@ -52,23 +52,6 @@ if (savedUser && savedUserId) {
   if (savedCoins) memoryState.currentUserCoins = parseInt(savedCoins, 10);
   memoryState.currentUserAvatar = savedAvatar || '/assets/images/Group 4.png';
   memoryState.currentUserBgColor = savedBgColor || '#F9D648';
-  
-  // Cargar inventario desde el servidor al iniciar la app
-  (async () => {
-    try {
-      const response = await fetch(`http://localhost:5050/users/${memoryState.currentUserId}/boosters`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data?.success && data.inventory) {
-          memoryState.inventory = data.inventory;
-          console.log('✅ Inventario cargado al iniciar app:', memoryState.inventory);
-        }
-      }
-    } catch (error) {
-      console.warn('⚠️ No se pudo cargar el inventario al iniciar:', error);
-    }
-  })();
-  
   route = { path: "/main", data: {} };
 } else {
   route = { path: "/", data: {} };
@@ -157,20 +140,30 @@ function joinRoom(code, playerName) {
 }
 
 async function updateCoins(delta) {
-  if (!memoryState.currentUserId) return;
-  // Obtener el valor actual (que ya debería estar actualizado localmente)
-  const currentLocalCoins = memoryState.currentUserCoins || 0;
-  const response = await makeRequest(`/users/${memoryState.currentUserId}/coins`, "PATCH", { delta });
-  if (response?.success && response.coins !== undefined) {
-    // Usar el valor MÁS ALTO entre el local actual y el del servidor
-    // NO sumar el delta de nuevo porque ya se sumó localmente
-    const serverCoins = response.coins;
-    const finalCoins = Math.max(currentLocalCoins, serverCoins);
-    memoryState.currentUserCoins = finalCoins;
-    localStorage.setItem('currentUserCoins', finalCoins.toString());
-    console.log('🔄 updateCoins:', { delta, currentLocal: currentLocalCoins, server: serverCoins, final: finalCoins });
+  if (!memoryState.currentUserId) {
+    console.warn('⚠️ No hay currentUserId para actualizar monedas');
+    return null;
   }
-  return response;
+  
+  const currentLocalCoins = memoryState.currentUserCoins || 0;
+  console.log('💰 updateCoins llamado:', { delta, currentLocal: currentLocalCoins, userId: memoryState.currentUserId });
+  
+  try {
+    const response = await makeRequest(`/users/${memoryState.currentUserId}/coins`, "PATCH", { delta });
+    if (response?.success && response.coins !== undefined) {
+      const serverCoins = response.coins;
+      const finalCoins = Math.max(currentLocalCoins, serverCoins);
+      memoryState.currentUserCoins = finalCoins;
+      localStorage.setItem('currentUserCoins', finalCoins.toString());
+      console.log('✅ updateCoins exitoso:', { delta, currentLocal: currentLocalCoins, server: serverCoins, final: finalCoins });
+    } else {
+      console.warn('⚠️ updateCoins: respuesta sin éxito o sin coins:', response);
+    }
+    return response;
+  } catch (error) {
+    console.error('❌ Error en updateCoins:', error);
+    return { error: error.message };
+  }
 }
 
 async function makeRequest(url, method = "GET", body) {

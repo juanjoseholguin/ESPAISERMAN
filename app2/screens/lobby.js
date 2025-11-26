@@ -110,6 +110,11 @@ export default async function renderLobby({ code, category, participants, timePe
 				const { startRoomAPI, loadRoomState } = await import('../services/roomsRealtime.js');
 				await startRoomAPI(roomCode, window.memoryState.currentUserId);
 				
+				window.currentQuestionIndex = 1;
+				localStorage.removeItem(`room_${roomCode}_questionIndex`);
+				localStorage.setItem(`room_${roomCode}_questionIndex`, '1');
+				console.log('🔄 Contador de preguntas reiniciado a 1 al iniciar partida');
+				
 				// Esperar un momento para que se actualice el estado
 				await new Promise(resolve => setTimeout(resolve, 500));
 				

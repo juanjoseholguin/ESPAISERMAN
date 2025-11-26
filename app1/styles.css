@@ -312,8 +312,10 @@ body {
 .profile-container {
     padding: 20px;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    justify-content: flex-start;
     align-items: center;
+    gap: 16px;
     min-height: calc(100vh - 100px);
 }
 

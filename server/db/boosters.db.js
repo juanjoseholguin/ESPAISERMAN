@@ -1,29 +1,56 @@
 const supabaseCli = require("../services/supabase.service");
 
 const getAllBoosters = async () => {
-  const { data, error } = await supabaseCli.from("booster").select("*").order("id", { ascending: true });
+  try {
+    console.log('🔍 getAllBoosters: Iniciando consulta a Supabase...');
+    const { data, error } = await supabaseCli.from("booster").select("*").order("id", { ascending: true });
 
-  if (error) {
-    console.error("Error retrieving boosters:", error);
-    return { error: error.message };
+    if (error) {
+      console.error("❌ Error retrieving boosters:", error);
+      console.error("❌ Error details:", JSON.stringify(error, null, 2));
+      return { error: error.message };
+    }
+
+    console.log(`✅ getAllBoosters: Retornando ${data?.length || 0} boosters`);
+    if (data && data.length > 0) {
+      console.log('📦 Boosters encontrados:', data.map(b => ({ id: b.id, name: b.booster_name })));
+    } else {
+      console.warn('⚠️ getAllBoosters: No se encontraron boosters en la BD');
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error("❌ Excepción en getAllBoosters:", err);
+    return { error: err.message };
   }
-
-  return data;
 };
 
 const getBoosterById = async (id) => {
-  const { data, error } = await supabaseCli
-    .from("booster")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
+  try {
+    console.log(`🔍 getBoosterById: Buscando booster con id ${id}...`);
+    const { data, error } = await supabaseCli
+      .from("booster")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
 
-  if (error) {
-    console.error("Error retrieving booster:", error);
-    return { error: error.message };
+    if (error) {
+      console.error("❌ Error retrieving booster:", error);
+      console.error("❌ Error details:", JSON.stringify(error, null, 2));
+      return { error: error.message };
+    }
+
+    if (!data) {
+      console.warn(`⚠️ getBoosterById: No se encontró booster con id ${id}`);
+    } else {
+      console.log(`✅ getBoosterById: Encontrado booster:`, { id: data.id, name: data.booster_name });
+    }
+
+    return data;
+  } catch (err) {
+    console.error("❌ Excepción en getBoosterById:", err);
+    return { error: err.message };
   }
-
-  return data;
 };
 
 const getUserBoosters = async (userId) => {

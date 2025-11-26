@@ -6,7 +6,8 @@ const {
   updatePlayerScore,
   startRoom,
   getRoomResults,
-  leaveRoom
+  leaveRoom,
+  endRoom
 } = require('../db/rooms.db');
 
 // Crear una sala
@@ -180,6 +181,28 @@ const leaveRoomController = async (req, res) => {
   }
 };
 
+const endRoomController = async (req, res) => {
+  try {
+    const { roomPin } = req.params;
+    const { adminUserId } = req.body;
+
+    if (!adminUserId) {
+      return res.status(400).json({ error: 'adminUserId es requerido' });
+    }
+
+    const result = await endRoom(roomPin, adminUserId);
+    
+    if (result.success) {
+      res.json({ success: true, message: 'Partida finalizada' });
+    } else {
+      res.status(400).json({ error: result.error });
+    }
+  } catch (error) {
+    console.error('Error in endRoomController:', error);
+    res.status(500).json({ error: 'Error al finalizar la sala' });
+  }
+};
+
 module.exports = {
   createRoomController,
   getRoomByPinController,
@@ -188,6 +211,7 @@ module.exports = {
   updatePlayerScoreController,
   startRoomController,
   getRoomResultsController,
-  leaveRoomController
+  leaveRoomController,
+  endRoomController
 };
 

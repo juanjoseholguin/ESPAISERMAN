@@ -186,7 +186,6 @@ export async function startRoomAPI(roomPin, adminUserId) {
   }
 }
 
-// Obtener resultados de una sala
 export async function getRoomResultsAPI(roomPin) {
   try {
     const response = await fetch(`http://localhost:5050/rooms/${roomPin}/results`);
@@ -199,6 +198,26 @@ export async function getRoomResultsAPI(roomPin) {
     return await response.json();
   } catch (error) {
     console.error('Error getting room results:', error);
+    throw error;
+  }
+}
+
+export async function endRoomAPI(roomPin, adminUserId) {
+  try {
+    const response = await fetch(`http://localhost:5050/rooms/${roomPin}/end`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ adminUserId })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Error al finalizar la sala');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error ending room:', error);
     throw error;
   }
 }

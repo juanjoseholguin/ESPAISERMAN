@@ -123,28 +123,34 @@ export default async function renderShop() {
   let boosters = [];
   let inventory = [];
   
-  // SIEMPRE usar memoryState.inventory primero si está disponible (después de comprar)
-  if (memoryState.inventory && memoryState.inventory.length > 0) {
-    inventory = memoryState.inventory;
-    console.log("📦 Usando inventario de memoryState (sin fetch):", inventory);
-  } else {
-    // Solo hacer fetch si no hay inventario en memoryState
-    try {
-      const inventoryResponse = await makeRequest(`/users/${userId}/boosters`, "GET");
-      
-      if (inventoryResponse?.inventory && Array.isArray(inventoryResponse.inventory)) {
-        inventory = inventoryResponse.inventory;
-      } else if (Array.isArray(inventoryResponse)) {
-        inventory = inventoryResponse;
-      } else if (inventoryResponse?.success && Array.isArray(inventoryResponse.data)) {
-        inventory = inventoryResponse.data;
-      }
-      
-      memoryState.inventory = inventory;
-      console.log("📦 Inventario cargado del servidor:", inventory);
-    } catch (error) {
-      console.error("Error loading inventory:", error);
-      inventory = memoryState.inventory || [];
+  try {
+    console.log(`📥 Cargando inventario para usuario ${userId}...`);
+    const inventoryResponse = await makeRequest(`/users/${userId}/boosters`, "GET");
+    
+    console.log('📦 Respuesta completa del servidor (tienda):', JSON.stringify(inventoryResponse, null, 2));
+    
+    if (inventoryResponse?.success && inventoryResponse.inventory && Array.isArray(inventoryResponse.inventory)) {
+      inventory = inventoryResponse.inventory;
+    } else if (Array.isArray(inventoryResponse)) {
+      inventory = inventoryResponse;
+    } else if (inventoryResponse?.inventory && Array.isArray(inventoryResponse.inventory)) {
+      inventory = inventoryResponse.inventory;
+    } else if (inventoryResponse?.data && Array.isArray(inventoryResponse.data)) {
+      inventory = inventoryResponse.data;
+    } else {
+      inventory = [];
+    }
+    
+    memoryState.inventory = inventory;
+    console.log("✅ Inventario cargado del servidor (tienda):", inventory);
+    console.log("📊 Detalles:", inventory.map(i => `${i.booster_name}: x${i.quantity} (id: ${i.booster_id || i.id})`));
+  } catch (error) {
+    console.error("❌ Error loading inventory:", error);
+    if (memoryState.inventory && memoryState.inventory.length > 0) {
+      inventory = memoryState.inventory;
+      console.log("📦 Usando inventario de memoryState (fallback):", inventory);
+    } else {
+      inventory = [];
     }
   }
   
@@ -219,18 +225,28 @@ export default async function renderShop() {
   // SIEMPRE usar memoryState.inventory si está disponible
   const currentInventory = (memoryState.inventory && memoryState.inventory.length > 0) ? memoryState.inventory : inventory;
   
-  const getQuantity = (name) => {
-    // Buscar por nombre exacto
-    let item = currentInventory.find((item) => item.booster_name === name);
-    // Si no encuentra, buscar sin considerar mayúsculas/minúsculas
-    if (!item) {
-      item = currentInventory.find((item) => item.booster_name?.toLowerCase() === name?.toLowerCase());
+  const getQuantity = (boosterId, name) => {
+    if (!currentInventory || currentInventory.length === 0) {
+      console.log(`⚠️ Inventario vacío para "${name}" (id: ${boosterId})`);
+      return 0;
     }
-    const qty = item?.quantity || 0;
+    
+    let item = currentInventory.find((item) => {
+      const matchesId = item.booster_id === boosterId || item.id === boosterId;
+      const matchesName = item.booster_name === name || 
+                         item.booster_name?.toLowerCase() === name?.toLowerCase();
+      return matchesId || matchesName;
+    });
+    
+    const qty = item ? (Number(item.quantity) || 0) : 0;
+    
     if (qty > 0) {
-      console.log(`✅ Encontrado "${name}": x${qty}`, item);
-    } else if (currentInventory.length > 0) {
-      console.log(`❌ No encontrado "${name}" en inventario. Inventario tiene:`, currentInventory.map(i => i.booster_name));
+      console.log(`✅ Encontrado "${name}" (id: ${boosterId}): x${qty}`, item);
+    } else {
+      console.log(`❌ No encontrado "${name}" (id: ${boosterId}) en inventario.`, {
+        buscando: { boosterId, name },
+        inventario: currentInventory.map(i => ({ id: i.booster_id || i.id, name: i.booster_name, qty: i.quantity }))
+      });
     }
     return qty;
   };
@@ -253,13 +269,16 @@ export default async function renderShop() {
   
   shopGrid.innerHTML = boosters
     .map(
-      (booster) => `
+      (booster) => {
+        const qty = getQuantity(booster.id, booster.booster_name);
+        return `
         <button class="shop-card" data-id="${booster.id}" style="position:relative; background:rgba(255,255,255,0.9); border-radius:20px; padding:12px; text-align:center; border:none; cursor:pointer;">
-          <span style="position:absolute; top:10px; right:12px; background:#1e3a8a; color:white; padding:2px 8px; border-radius:999px; font-size:12px;">x${getQuantity(booster.booster_name)}</span>
+          <span style="position:absolute; top:10px; right:12px; background:#1e3a8a; color:white; padding:2px 8px; border-radius:999px; font-size:12px;">x${qty}</span>
           <img src="${boosterIcons[booster.booster_name] || "/assets/images/Group 4.png"}" alt="${booster.booster_name}" style="width:100%; max-width:96px; margin:0 auto; display:block;">
           <div style="font-weight:800; margin-top:8px; color:#1e3a8a;">${booster.booster_name}</div>
           <div style="font-size:14px; color:#666; margin-top:4px;">${booster.booster_price || 200} monedas</div>
-        </button>`
+        </button>`;
+      }
     )
     .join("");
   
@@ -291,76 +310,83 @@ export default async function renderShop() {
 
   modal.querySelector('#m-buy').addEventListener('click', async () => {
     if (!selectedBooster) return;
+    
+    const boosterId = Number(selectedBooster.id);
+    if (!boosterId || boosterId <= 0) {
+      console.error('❌ ID de booster inválido:', selectedBooster);
+      alert('Error: ID de potenciador inválido');
+      return;
+    }
+    
     try {
-      // Si es un booster por defecto (sin ID real de BD), usar localStorage
-      if (selectedBooster.id <= 4 && !selectedBooster.id.toString().includes('real')) {
-        const coins = memoryState.currentUserCoins || 0;
-        const price = selectedBooster.booster_price || 200;
-        
-        if (coins < price) {
-          alert('No tienes suficientes monedas');
-          return;
-        }
-        
-        // Actualizar monedas localmente
-        memoryState.currentUserCoins = coins - price;
-        localStorage.setItem('currentUserCoins', memoryState.currentUserCoins.toString());
-        
-        // Agregar al inventario local
-        const activePowerups = JSON.parse(localStorage.getItem('activePowerups') || '[]');
-        const slugMap = {
-          'Empanadirri': 'empanada',
-          'Empanadirri legal': 'empanada',
-          'Media': 'guaro',
-          'Media de güaro temporal': 'guaro',
-          'Chichaghrrrom': 'chicharron',
-          'Chichaghrrom': 'chicharron',
-          'Café': 'cafe',
-          'Café cargado': 'cafe'
-        };
-        const slug = slugMap[selectedBooster.booster_name] || selectedBooster.booster_name.toLowerCase();
-        activePowerups.push(slug);
-        localStorage.setItem('activePowerups', JSON.stringify(activePowerups));
-        
-        // Actualizar UI
-        const coinsLabel = document.getElementById('coins-label');
-        if (coinsLabel) coinsLabel.textContent = memoryState.currentUserCoins;
-        
-        modal.style.display = 'none';
-        alert('¡Compra exitosa! Ya puedes usar tu potenciador en la partida.');
-        renderShop();
-        return;
-      }
+      console.log('🛒 Iniciando compra:', {
+        boosterId,
+        boosterName: selectedBooster.booster_name,
+        price: selectedBooster.booster_price,
+        userId
+      });
       
-      // Si tiene ID real de BD, usar el endpoint
-      const response = await makeRequest(`/users/${userId}/boosters/purchase`, "POST", { boosterId: selectedBooster.id });
+      const response = await makeRequest(`/users/${userId}/boosters/purchase`, "POST", { boosterId });
+      
+      console.log('📦 Respuesta del servidor:', JSON.stringify(response, null, 2));
+      
       if (response.error) {
+        console.error('❌ Error del servidor:', response.error);
         alert(response.error);
         return;
       }
       
-      // Actualizar estado local ANTES de recargar
-      memoryState.currentUserCoins = response.coins;
-      memoryState.inventory = response.inventory || [];
-      localStorage.setItem('currentUserCoins', response.coins.toString());
+      if (!response.success) {
+        console.error('❌ Compra no exitosa:', response);
+        alert('Error al completar la compra. Por favor intenta de nuevo.');
+        return;
+      }
       
-      console.log('✅ Compra exitosa - Inventario actualizado:', {
-        coins: response.coins,
-        inventory: response.inventory,
-        inventoryLength: response.inventory?.length,
-        inventoryDetails: response.inventory?.map(i => `${i.booster_name}: x${i.quantity}`),
-        memoryStateInventory: memoryState.inventory
+      memoryState.currentUserCoins = response.coins || 0;
+      memoryState.inventory = response.inventory || [];
+      localStorage.setItem('currentUserCoins', memoryState.currentUserCoins.toString());
+      
+      const boosterSlugByName = {
+        'Empanadirri': 'empanada',
+        'Empanadirri legal': 'empanada',
+        'Media': 'guaro',
+        'Media de güaro temporal': 'guaro',
+        'Media de güaro tempo': 'guaro',
+        'Chichaghrrrom': 'chicharron',
+        'Chichaghrrom': 'chicharron',
+        'Café': 'cafe',
+        'Café cargado': 'cafe',
+      };
+      
+      const activePowerups = [];
+      if (response.inventory && Array.isArray(response.inventory)) {
+        response.inventory.forEach(item => {
+          const slug = boosterSlugByName[item.booster_name] || item.booster_name?.toLowerCase();
+          if (slug && item.quantity > 0) {
+            for (let i = 0; i < item.quantity; i++) {
+              activePowerups.push(slug);
+            }
+          }
+        });
+      }
+      localStorage.setItem('activePowerups', JSON.stringify(activePowerups));
+      
+      console.log('✅ Compra exitosa - Estado actualizado:', {
+        coins: memoryState.currentUserCoins,
+        inventory: memoryState.inventory,
+        inventoryLength: memoryState.inventory?.length,
+        inventoryDetails: memoryState.inventory?.map(i => `${i.booster_name}: x${i.quantity} (id: ${i.booster_id})`),
+        activePowerups: activePowerups
       });
       
       modal.style.display = 'none';
       
-      // Recargar la tienda INMEDIATAMENTE usando el inventario actualizado
       await renderShop();
       
       alert('¡Compra exitosa! Ya puedes usar tu potenciador en la partida.');
     } catch (error) {
-      console.error("Error purchasing booster:", error);
-      alert("No se pudo completar la compra");
+      console.error("❌ Error purchasing booster:", error);
+      alert("No se pudo completar la compra: " + (error.message || 'Error desconocido'));
     }
   });
 }

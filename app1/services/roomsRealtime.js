@@ -207,7 +207,6 @@ export async function updatePlayerScoreAPI(roomPin, userId, points) {
   }
 }
 
-// Obtener resultados de una sala
 export async function getRoomResultsAPI(roomPin) {
   try {
     const response = await fetch(`http://localhost:5050/rooms/${roomPin}/results`);
@@ -223,4 +222,19 @@ export async function getRoomResultsAPI(roomPin) {
     throw error;
   }
 }
+
+export async function checkRoomStatus(roomPin) {
+  try {
+    const response = await fetch(`http://localhost:5050/rooms/${roomPin}`);
+    if (!response.ok) {
+      return { room_status: false };
+    }
+    const roomData = await response.json();
+    return { room_status: roomData.room_status || false };
+  } catch (error) {
+    console.error('Error checking room status:', error);
+    return { room_status: false };
+  }
+}
+
 
