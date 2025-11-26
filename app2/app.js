@@ -6,8 +6,7 @@ import renderGameResults from "./screens/gameResults.js";
 import { renderProfileEdit } from "./screens/profileEdit.js";
 import renderActiveGame from "./screens/activeGame.js";
 
-const socket = io("https://espaiserman-2yll.vercel.app", { path: "/real-time" });
-window.socket = socket;
+// Usando Supabase Realtime para comunicación en tiempo real
 
 const memoryState = {
   rooms: new Map(),
@@ -106,4 +105,4 @@ async function makeRequest(url, method = "GET", body) {
   return response;
 }
 
-export { navigateTo, socket, makeRequest, generateRoomCode, memoryState };
+export { navigateTo, makeRequest, generateRoomCode, memoryState };

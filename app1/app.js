@@ -11,9 +11,6 @@ import renderCorrectAnswer from "./screens/correctAnswer.js";
 import renderWrongAnswer from "./screens/wrongAnswer.js";
 import renderGameResults from "./screens/gameResults.js";
 
-const socket = io("https://espaiserman-2yll.vercel.app", { path: "/real-time" });
-window.socket = socket;
-
 // Configurar Supabase para Realtime (se configuran desde index.html)
 // Estas variables se deben definir en index.html antes de cargar este script
 if (typeof window.SUPABASE_URL === 'undefined') {
@@ -186,4 +183,4 @@ async function makeRequest(url, method = "GET", body) {
   return response;
 }
 
-export { navigateTo, socket, makeRequest, createRoom, joinRoom, memoryState, updateCoins };
+export { navigateTo, makeRequest, createRoom, joinRoom, memoryState, updateCoins };
