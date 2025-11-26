@@ -67,6 +67,21 @@ export default async function renderLobby({ code } = {}) {
 			}
 		}
 
+		// Cargar puntos personalizados si están disponibles
+		if (state.map_points && Array.isArray(state.map_points) && state.map_points.length > 0) {
+			window.roomMapPoints = state.map_points;
+			console.log('📍 Puntos personalizados cargados:', window.roomMapPoints);
+		} else if (!window.roomMapPoints) {
+			// Usar puntos por defecto si no hay personalizados
+			window.roomMapPoints = [
+				{ name: 'Edificio A', coords: [3.3435, -76.533], questionNumber: 1 },
+				{ name: 'Biblioteca', coords: [3.3438, -76.5332], questionNumber: 2 },
+				{ name: 'Cafetería', coords: [3.3442, -76.5328], questionNumber: 3 },
+				{ name: 'Auditorio', coords: [3.3439, -76.5325], questionNumber: 4 },
+				{ name: 'Laboratorios', coords: [3.3445, -76.533], questionNumber: 5 },
+			];
+		}
+
 		// Verificar si la sala inició (los jugadores no necesitan roomQuestions, solo verificar room_status)
 		if (state.room_status) {
 			console.log('🎮 Game started, navigating to active game');
@@ -80,7 +95,7 @@ export default async function renderLobby({ code } = {}) {
 
 	// Cargar estado inicial
 	const { subscribeToRoom, loadRoomState } = await import('../services/roomsRealtime.js');
-	
+
 	// Función para recargar el estado
 	const reloadRoomState = async () => {
 		console.log(`🔄 Reloading room state for: ${code}`);
@@ -92,7 +107,7 @@ export default async function renderLobby({ code } = {}) {
 			console.warn(`⚠️ No state returned for room ${code}`);
 		}
 	};
-	
+
 	// Cargar estado inicial
 	if (code) {
 		await reloadRoomState();
@@ -104,7 +119,7 @@ export default async function renderLobby({ code } = {}) {
 			console.log('🔄 Cambio detectado en sala, recargando estado...');
 			// Recargar el estado completo cuando hay cambios
 			const updatedState = await reloadRoomState();
-			
+
 			// Si la sala se inicia (room_status cambia a true), navegar automáticamente
 			if (updatedState && updatedState.room_status) {
 				console.log('🎮 Room started detected via Realtime, navigating to active game');
@@ -120,8 +135,24 @@ export default async function renderLobby({ code } = {}) {
 				if (roomState) {
 					window.roomTimePerQuestion = roomState.timePerQuestion;
 					window.roomCategory = roomState.category;
+
+					// Cargar puntos personalizados desde la base de datos
+					if (roomState.map_points && Array.isArray(roomState.map_points) && roomState.map_points.length > 0) {
+						window.roomMapPoints = roomState.map_points;
+						console.log('📍 Puntos personalizados cargados desde la base de datos:', window.roomMapPoints);
+					} else {
+						// Usar puntos por defecto si no hay personalizados
+						window.roomMapPoints = [
+							{ name: 'Edificio A', coords: [3.3435, -76.533], questionNumber: 1 },
+							{ name: 'Biblioteca', coords: [3.3438, -76.5332], questionNumber: 2 },
+							{ name: 'Cafetería', coords: [3.3442, -76.5328], questionNumber: 3 },
+							{ name: 'Auditorio', coords: [3.3439, -76.5325], questionNumber: 4 },
+							{ name: 'Laboratorios', coords: [3.3445, -76.533], questionNumber: 5 },
+						];
+						console.log('📍 Usando puntos por defecto (no hay personalizados)');
+					}
 				}
-				
+
 				// Pequeño delay para que el usuario vea el mensaje de "iniciando"
 				setTimeout(() => {
 					navigateTo('/active', { roomCode: code });
@@ -153,7 +184,7 @@ export default async function renderLobby({ code } = {}) {
 					false
 				);
 				console.log('✅ Successfully joined room:', result);
-				
+
 				// Recargar el estado después de unirse para ver el jugador en la lista
 				// Esperar un poco más para que Supabase procese el INSERT
 				setTimeout(async () => {

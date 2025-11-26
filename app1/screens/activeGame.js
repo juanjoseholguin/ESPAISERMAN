@@ -1,4 +1,25 @@
 import { navigateTo, makeRequest, memoryState, updateCoins } from '../app.js';
+import {
+	initGeolocation,
+	onProximityChange,
+	onLocationUpdate,
+	stopGeolocation,
+	getCurrentLocation,
+	getPoints,
+	setCustomPoints,
+} from '../services/geolocation.service.js';
+
+// Función para calcular distancia (Haversine)
+function calculateDistance(lat1, lon1, lat2, lon2) {
+	const R = 6371e3;
+	const φ1 = (lat1 * Math.PI) / 180;
+	const φ2 = (lat2 * Math.PI) / 180;
+	const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+	const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+	const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+	const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+	return R * c;
+}
 
 // Función para suscribirse a cambios en el inventario usando Supabase Realtime
 function setupInventoryRealtime(userId) {
@@ -9,19 +30,19 @@ function setupInventoryRealtime(userId) {
 
   const SUPABASE_URL = window.SUPABASE_URL;
   const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
-  
+
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     console.warn('⚠️ SUPABASE_URL o SUPABASE_ANON_KEY no están configurados en index.html');
     return null;
   }
-  
+
   // Usar la función createClient de Supabase
   const supabaseLib = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
   if (!supabaseLib || !supabaseLib.createClient) {
     console.warn('⚠️ Supabase createClient no está disponible');
     return null;
   }
-  
+
   const supabaseClient = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const channel = supabaseClient
@@ -36,13 +57,13 @@ function setupInventoryRealtime(userId) {
       },
       async (payload) => {
         console.log('🔄 Cambio en inventario durante el juego:', payload);
-        
+
         try {
           const response = await makeRequest(`/users/${userId}/boosters`, 'GET');
           if (response?.success && response.inventory) {
             memoryState.inventory = response.inventory;
             console.log('✅ Inventario actualizado en juego:', memoryState.inventory);
-            
+
             // Actualizar la barra de potenciadores si existe
             const inventoryResponse = memoryState.inventory;
             const formattedInventory = formatInventoryList(inventoryResponse);
@@ -87,6 +108,320 @@ const boosterDescriptions = {
 	cafe: 'Reduce 10 segundos al reloj para apurarte.',
 };
 
+function renderIntermedioWithGeolocation({ app, roomCode, currentQuestion, totalQuestions, formattedInventory, playerName, playerScore, formattedQuestions, timePerQuestion }) {
+	let isButtonEnabled = false;
+	let distanceToPoint = null;
+	let currentLocation = null;
+
+	// Renderizar pantalla intermedia inicial
+	app.innerHTML = renderIntermedioScreen({
+		roomCode,
+		currentQuestion,
+		totalQuestions,
+		formattedInventory,
+		playerName,
+		playerScore,
+		isButtonEnabled: false,
+		distanceToPoint: null,
+	});
+
+	// Establecer puntos personalizados si están disponibles
+	if (window.roomMapPoints && Array.isArray(window.roomMapPoints)) {
+		setCustomPoints(window.roomMapPoints);
+		console.log('📍 Usando puntos personalizados del mapa:', window.roomMapPoints);
+	}
+
+	// Iniciar geolocalización
+	const playerNameForGeo = memoryState.currentUser || 'Jugador';
+	console.log('📍 Iniciando geolocalización para:', { roomCode, playerName: playerNameForGeo });
+
+	// Pequeño delay para asegurar que el DOM esté listo
+	setTimeout(() => {
+		initGeolocation(roomCode, playerNameForGeo);
+		window.geolocationActive = true;
+		console.log('✅ Geolocalización iniciada');
+	}, 500);
+
+	// Inicializar mapa del jugador
+	let playerMap = null;
+	let playerMarker = null;
+	let questionMarkers = [];
+
+	setTimeout(() => {
+		if (window.L) {
+			initPlayerMap(roomCode, currentQuestion);
+		}
+	}, 600);
+
+	function initPlayerMap(roomCode, currentQuestionNum) {
+		const mapDiv = document.getElementById('player-map');
+		if (!mapDiv || !window.L) return;
+
+		// Obtener puntos
+		const points = window.roomMapPoints && Array.isArray(window.roomMapPoints)
+			? window.roomMapPoints
+			: getPoints();
+
+		const icesiCoords = [3.344, -76.5329];
+
+		playerMap = L.map(mapDiv, {
+			dragging: true,
+			touchZoom: true,
+			scrollWheelZoom: true,
+			doubleClickZoom: true,
+			boxZoom: false,
+			keyboard: false,
+		}).setView(icesiCoords, 17);
+
+		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			attribution: '© OpenStreetMap contributors',
+		}).addTo(playerMap);
+
+		// Agregar marcadores de preguntas
+		points.forEach((point, idx) => {
+			const isCurrentQuestion = point.questionNumber === currentQuestionNum;
+			const iconColor = isCurrentQuestion ? '#8B5CF6' : '#FFE28A';
+			const borderColor = isCurrentQuestion ? '#6D28D9' : '#1e3a8a';
+
+			const icon = L.divIcon({
+				className: 'question-marker-player',
+				html: `<div style="background-color: ${iconColor}; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid ${borderColor}; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"><span style="color: #1e3a8a; font-weight: bold; font-size: 16px;">${point.questionNumber || idx + 1}</span></div>`,
+				iconSize: [40, 40],
+				iconAnchor: [20, 20],
+			});
+
+			const marker = L.marker(point.coords, { icon: icon }).addTo(playerMap);
+			marker.bindPopup(`
+				<div style="text-align:center; padding:8px; min-width:120px;">
+					<strong style="font-size:16px; color:#1e3a8a;">${point.name}</strong><br/>
+					<small style="color:#666;">Pregunta ${point.questionNumber || idx + 1}</small>
+					${isCurrentQuestion ? '<br/><small style="color:#8B5CF6; font-weight:bold;">📍 Siguiente</small>' : ''}
+				</div>
+			`);
+			questionMarkers.push(marker);
+		});
+	}
+
+	function updatePlayerLocationOnMap(latitude, longitude) {
+		if (!playerMap || !window.L) return;
+
+		// Eliminar marcador anterior si existe
+		if (playerMarker) {
+			playerMap.removeLayer(playerMarker);
+		}
+
+		// Agregar nuevo marcador del jugador
+		const playerIcon = L.divIcon({
+			className: 'player-location-marker',
+			html: `<div style="background-color: #11A36B; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.4);"><span style="color: white; font-weight: bold; font-size: 16px;">👤</span></div>`,
+			iconSize: [32, 32],
+			iconAnchor: [16, 16],
+		});
+
+		playerMarker = L.marker([latitude, longitude], { icon: playerIcon }).addTo(playerMap);
+		playerMarker.bindPopup(`
+			<div style="text-align:center; padding:8px;">
+				<strong style="font-size:14px; color:#1e3a8a;">Tu ubicación</strong>
+			</div>
+		`);
+
+		// Centrar mapa en la ubicación del jugador
+		playerMap.setView([latitude, longitude], 17);
+	}
+
+	// Configurar callback de proximidad
+	onProximityChange(({ isNearPoint, nearestPoint, distance }) => {
+		const expectedQuestionNumber = currentQuestion;
+		const isCorrectPoint = nearestPoint && nearestPoint.questionNumber === expectedQuestionNumber;
+
+		if (isCorrectPoint && isNearPoint) {
+			isButtonEnabled = true;
+			distanceToPoint = distance;
+		} else {
+			isButtonEnabled = false;
+			// Mostrar distancia al siguiente punto (pregunta actual)
+			if (nearestPoint && nearestPoint.questionNumber === expectedQuestionNumber) {
+				distanceToPoint = distance;
+			} else {
+				// Calcular distancia al siguiente punto (pregunta actual)
+				const points = window.roomMapPoints && Array.isArray(window.roomMapPoints)
+					? window.roomMapPoints
+					: getPoints();
+				const targetPoint = points.find(p => p.questionNumber === expectedQuestionNumber);
+
+				if (targetPoint && currentLocation && currentLocation.latitude && currentLocation.longitude) {
+					// Calcular distancia al punto objetivo
+					distanceToPoint = calculateDistance(
+						currentLocation.latitude,
+						currentLocation.longitude,
+						targetPoint.coords[0],
+						targetPoint.coords[1]
+					);
+				} else if (distance !== null) {
+					// Usar la distancia del punto más cercano como referencia
+					distanceToPoint = distance;
+				}
+			}
+		}
+
+		// Actualizar UI
+		const btn = document.getElementById('btn-answer-question');
+		const distanceMessageEl = document.getElementById('distance-message');
+
+		if (btn) {
+			if (isButtonEnabled) {
+				btn.disabled = false;
+				btn.style.opacity = '1';
+				btn.style.cursor = 'pointer';
+				btn.style.background = '#8B5CF6';
+				btn.style.borderColor = '#6D28D9';
+			} else {
+				btn.disabled = true;
+				btn.style.opacity = '0.5';
+				btn.style.cursor = 'not-allowed';
+				btn.style.background = '#9CA3AF';
+				btn.style.borderColor = '#6B7280';
+			}
+		}
+
+		if (distanceMessageEl && distanceToPoint !== null) {
+			const points = window.roomMapPoints && Array.isArray(window.roomMapPoints)
+				? window.roomMapPoints
+				: getPoints();
+			const currentPoint = points.find(p => p.questionNumber === currentQuestion) || points[currentQuestion - 1] || points[0];
+
+			if (isCorrectPoint && isNearPoint) {
+				distanceMessageEl.innerHTML = `
+					<p style="color:#11A36B; font-size:16px; font-weight:600; margin:0;">¡Estás cerca! A ${Math.round(distanceToPoint)}m de la siguiente pregunta (${currentQuestion}), panita</p>
+					<p style="color:#1e3a8a; font-size:14px; font-weight:600; margin-top:4px;">📍 ${currentPoint.name}</p>
+				`;
+			} else {
+				distanceMessageEl.innerHTML = `
+					<p style="color:#1e3a8a; font-size:16px; font-weight:600; margin:0;">Estás a ${Math.round(distanceToPoint)}m de la siguiente pregunta (${currentQuestion}), panita</p>
+					<p style="color:#1e3a8a; font-size:14px; font-weight:600; margin-top:4px;">📍 ${currentPoint.name}</p>
+				`;
+			}
+		}
+
+		// Actualizar ubicación en el mapa si tenemos coordenadas
+		if (currentLocation && currentLocation.latitude && currentLocation.longitude) {
+			updatePlayerLocationOnMap(currentLocation.latitude, currentLocation.longitude);
+		}
+	});
+
+	// Suscribirse a actualizaciones de ubicación
+	onLocationUpdate((location) => {
+		currentLocation = location;
+		if (location && location.latitude && location.longitude) {
+			updatePlayerLocationOnMap(location.latitude, location.longitude);
+		}
+	});
+
+	// Configurar botones
+	setTimeout(() => {
+		const btn = document.getElementById('btn-answer-question');
+		if (btn) {
+			btn.addEventListener('click', () => {
+				if (!isButtonEnabled) return;
+
+				// Detener geolocalización temporalmente
+				stopGeolocation();
+				window.geolocationActive = false;
+
+				// Marcar que estamos mostrando la pregunta
+				window.showingQuestion = true;
+
+				// Renderizar la pregunta
+				renderQuestionScreen({
+					app,
+					roomCode,
+					currentQuestion,
+					formattedQuestions,
+					timePerQuestion,
+					formattedInventory,
+				});
+			});
+		}
+
+		// Botón para activar ubicación manualmente
+		const locationBtn = document.getElementById('btn-enable-location');
+		if (locationBtn) {
+			locationBtn.addEventListener('click', () => {
+				console.log('📍 Botón de ubicación presionado manualmente');
+				const playerNameForGeo = memoryState.currentUser || 'Jugador';
+				initGeolocation(roomCode, playerNameForGeo);
+				window.geolocationActive = true;
+				locationBtn.textContent = '📍 Ubicación activada';
+				locationBtn.style.background = '#11A36B';
+				setTimeout(() => {
+					locationBtn.style.display = 'none';
+				}, 2000);
+			});
+		}
+	}, 100);
+}
+
+function renderIntermedioScreen({ roomCode, currentQuestion, totalQuestions, formattedInventory, playerName, playerScore, isButtonEnabled = false, distanceToPoint = null }) {
+	// Usar puntos personalizados si están disponibles, sino usar los por defecto
+	const points = window.roomMapPoints && Array.isArray(window.roomMapPoints)
+		? window.roomMapPoints
+		: getPoints();
+	const currentPoint = points.find(p => p.questionNumber === currentQuestion) || points[currentQuestion - 1] || points[0];
+	const powerupsBanner = renderPowerupsBar(formattedInventory);
+
+	const buttonStyle = isButtonEnabled
+		? 'background:#8B5CF6; border-color:#6D28D9; cursor:pointer; opacity:1;'
+		: 'background:#9CA3AF; border-color:#6B7280; cursor:not-allowed; opacity:0.5;';
+
+	const distanceText = distanceToPoint !== null
+		? `Estás a ${Math.round(distanceToPoint)}m de la siguiente pregunta (${currentQuestion}), panita`
+		: 'Buscando tu ubicación...';
+
+	return `
+    <div class="screen active">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px;">
+        <div style="display:flex; align-items:center; gap:6px; background:#FFE28A; padding:6px 12px; border-radius:12px;">
+          <img src="/assets/images/Group 19453.png" alt="coin" style="width:20px; height:20px;">
+          <span style="font-weight:800; color:#1e3a8a; font-size:15px;">${playerScore || 0}</span>
+        </div>
+        <div style="font-weight:800; color:#1e3a8a; font-size:14px;">${playerName || 'Jugador'}</div>
+      </div>
+
+      ${powerupsBanner}
+
+      <div style="background:linear-gradient(135deg, #FFE28A 0%, #F9D648 100%); min-height:calc(100vh - 200px); padding:24px 16px; text-align:center;">
+        <h1 style="color:#1e3a8a; font-size:28px; font-weight:800; margin-bottom:16px;">Así va la cosa, parceros</h1>
+
+        <div style="background:rgba(255,255,255,0.95); border-radius:16px; padding:16px; margin-bottom:16px;">
+          <p style="color:#1e3a8a; font-size:16px; font-weight:600; margin:0;">¡No sea aguevado, mijo! Póngase las pilas y vaya al siguiente punto</p>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.95); border-radius:16px; padding:12px; margin-bottom:16px;">
+          <h3 style="text-align:center; color:#1e3a8a; font-size:18px; margin-bottom:8px; font-weight:800;">🗺️ Mapa</h3>
+          <div id="player-map" style="width:100%; height:250px; border-radius:12px; overflow:hidden; background:#e5e7eb;"></div>
+        </div>
+
+        <div id="distance-message" style="background:rgba(255,255,255,0.95); border-radius:16px; padding:12px; margin-bottom:16px;">
+          <p style="color:#1e3a8a; font-size:16px; font-weight:600; margin:0;">${distanceText}</p>
+          <p style="color:#1e3a8a; font-size:14px; font-weight:600; margin-top:4px;">📍 ${currentPoint.name}</p>
+        </div>
+
+        <button id="btn-answer-question" ${isButtonEnabled ? '' : 'disabled'} style="${buttonStyle} padding:16px 32px; border-radius:16px; color:white; font-size:18px; font-weight:bold; border:3px solid; width:100%; max-width:320px; margin:0 auto 16px; display:block;">
+          Responder pregunta
+        </button>
+
+        <button id="btn-enable-location" style="background:#1e3a8a; color:white; padding:12px 24px; border-radius:12px; font-size:14px; font-weight:bold; border:none; width:100%; max-width:320px; margin:0 auto 8px; display:block; cursor:pointer;">
+          📍 Activar Ubicación
+        </button>
+
+        <div style="background:rgba(255,255,255,0.95); border-radius:16px; padding:12px; margin-top:16px;">
+          <p style="color:#1e3a8a; font-size:14px; margin:0;">¡Uy, qué nivel! Está en el segundo puesto, pero Lucho Portuano va punteando. ¡Esto se puso bueno, no afloje.</p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 export default async function renderActiveGame({ roomCode } = {}) {
 	const app = document.getElementById('app');
 	app.innerHTML = `
@@ -96,7 +431,7 @@ export default async function renderActiveGame({ roomCode } = {}) {
       </div>
     </div>`;
 	const currentQuestion = window.currentQuestionIndex || 1;
-	
+
 	// Obtener información de la sala para cargar las preguntas
 	let questions = window.roomQuestions || [];
 	let timePerQuestion = window.roomTimePerQuestion || 30;
@@ -107,17 +442,17 @@ export default async function renderActiveGame({ roomCode } = {}) {
 		console.log('📥 No hay preguntas en window.roomQuestions, obteniendo desde el servidor...');
 		try {
 			// Obtener información de la sala
-			const roomResponse = await fetch(`http://localhost:5050/rooms/${roomCode}`);
+			const roomResponse = await fetch(`${window.location.origin}/rooms/${roomCode}`);
 			if (roomResponse.ok) {
 				const roomData = await roomResponse.json();
 				roomCategory = roomData.room_category_id;
 				timePerQuestion = roomData.time_per_question || 30;
-				
+
 				console.log(`✅ Sala encontrada, categoría: ${roomCategory}, tiempo: ${timePerQuestion}`);
-				
+
 				// Obtener preguntas de la categoría
 				if (roomCategory) {
-					const questionsResponse = await fetch(`http://localhost:5050/questions/category/${roomCategory}`);
+					const questionsResponse = await fetch(`${window.location.origin}/questions/category/${roomCategory}`);
 					if (questionsResponse.ok) {
 						const allQuestions = await questionsResponse.json();
 						// Tomar las primeras 5 preguntas (igual que el moderador)
@@ -173,19 +508,24 @@ export default async function renderActiveGame({ roomCode } = {}) {
 	}
 
 	const question = formattedQuestions[currentQuestion - 1];
-	
+
+	// Limpiar geolocalización anterior si existe
+	if (window.geolocationActive) {
+		stopGeolocation();
+	}
+
 	// Limpiar suscripción anterior si existe
 	if (window.inventoryGameChannel) {
 		window.inventoryGameChannel.unsubscribe();
 	}
-	
+
 	// SIEMPRE cargar el inventario desde el servidor para asegurar datos actualizados
 	let inventoryResponse = [];
 	try {
 		inventoryResponse = await loadInventory();
 		console.log('🎮 Inventario cargado del servidor:', inventoryResponse);
 		console.log('🎮 Detalles:', inventoryResponse.map(i => `${i.booster_name}: x${i.quantity || 0}`));
-		
+
 		// Actualizar memoryState con el inventario cargado
 		if (inventoryResponse && inventoryResponse.length > 0) {
 			memoryState.inventory = inventoryResponse;
@@ -198,24 +538,54 @@ export default async function renderActiveGame({ roomCode } = {}) {
 			console.log('⚠️ Usando inventario de memoryState (fallback):', inventoryResponse);
 		}
 	}
-	
+
 	// Configurar Realtime para actualizar inventario durante el juego
 	if (memoryState.currentUserId) {
 		window.inventoryGameChannel = setupInventoryRealtime(memoryState.currentUserId);
 	}
-	
+
 	const formattedInventory = formatInventoryList(inventoryResponse);
 	console.log('🎮 Inventario formateado:', formattedInventory);
 
-	const points = [
-		{ name: 'Edificio A', coords: [3.3435, -76.533] },
-		{ name: 'Biblioteca', coords: [3.3438, -76.5332] },
-		{ name: 'Cafetería', coords: [3.3442, -76.5328] },
-		{ name: 'Auditorio', coords: [3.3439, -76.5325] },
-		{ name: 'Laboratorios', coords: [3.3445, -76.533] },
-	];
+	// Verificar si debemos mostrar la pantalla intermedia o la pregunta
+	// Por defecto, mostrar la pantalla intermedia (excepto si ya estamos mostrando una pregunta)
+	const showIntermedio = window.showingQuestion !== true;
 
-	const currentPoint = points[currentQuestion - 1] || points[0];
+	if (showIntermedio) {
+		// Mostrar pantalla intermedia con geolocalización
+		renderIntermedioWithGeolocation({
+			app,
+			roomCode,
+			currentQuestion,
+			totalQuestions: formattedQuestions.length,
+			formattedInventory,
+			playerName: memoryState.currentUser || 'Jugador',
+			playerScore: memoryState.currentUserCoins || 0,
+			formattedQuestions,
+			timePerQuestion,
+		});
+		return;
+	}
+
+	// Si estamos aquí, mostrar la pregunta
+	renderQuestionScreen({
+		app,
+		roomCode,
+		currentQuestion,
+		formattedQuestions,
+		timePerQuestion,
+		formattedInventory,
+	});
+}
+
+function renderQuestionScreen({ app, roomCode, currentQuestion, formattedQuestions, timePerQuestion, formattedInventory }) {
+	const question = formattedQuestions[currentQuestion - 1];
+
+	// Usar puntos personalizados si están disponibles, sino usar los por defecto
+	const points = window.roomMapPoints && Array.isArray(window.roomMapPoints)
+		? window.roomMapPoints
+		: getPoints();
+	const currentPoint = points.find(p => p.questionNumber === currentQuestion) || points[currentQuestion - 1] || points[0];
 	const powerupsBanner = renderPowerupsBar(formattedInventory);
 
 	app.innerHTML = `
@@ -318,7 +688,7 @@ export default async function renderActiveGame({ roomCode } = {}) {
 		const feedbackEl = document.getElementById('powerup-feedback');
 		const doublePointsPill = document.getElementById('double-points-pill');
 		const answerButtons = Array.from(document.querySelectorAll('.answer-btn'));
-		
+
 		// Asegurar que las monedas estén inicializadas correctamente
 		const savedCoins = parseInt(localStorage.getItem('currentUserCoins') || '0', 10);
 		// Siempre usar el valor más alto entre memoryState y localStorage
@@ -328,16 +698,16 @@ export default async function renderActiveGame({ roomCode } = {}) {
 		);
 		memoryState.currentUserCoins = currentCoins;
 		localStorage.setItem('currentUserCoins', currentCoins.toString());
-		
+
 		// Sincronizar siempre con localStorage para mantener consistencia
 		if (coinsLabel) {
 			coinsLabel.textContent = currentCoins;
 		}
-		console.log('💰 Monedas inicializadas en pregunta', currentQuestion, ':', { 
-			memoryState: memoryState.currentUserCoins, 
+		console.log('💰 Monedas inicializadas en pregunta', currentQuestion, ':', {
+			memoryState: memoryState.currentUserCoins,
 			localStorage: savedCoins,
 			final: currentCoins,
-			displayed: coinsLabel?.textContent 
+			displayed: coinsLabel?.textContent
 		});
 
 		const showFeedback = (message) => {
@@ -365,6 +735,7 @@ export default async function renderActiveGame({ roomCode } = {}) {
 		const goToNextStep = () => {
 			if (currentQuestion < formattedQuestions.length) {
 				window.currentQuestionIndex = currentQuestion + 1;
+				window.showingQuestion = false;
 				navigateTo('/active', { roomCode });
 			} else {
 				window.currentQuestionIndex = 1;
@@ -485,33 +856,33 @@ export default async function renderActiveGame({ roomCode } = {}) {
 				if (isCorrect) {
 					clickedBtn.style.border = '3px solid #11A36B';
 					const coinsEarned = state.doublePoints ? 200 : 100;
-					
+
 					// Obtener monedas actuales desde múltiples fuentes para asegurar consistencia
 					const currentCoinsFromMemory = memoryState.currentUserCoins || 0;
 					const currentCoinsFromStorage = parseInt(localStorage.getItem('currentUserCoins') || '0', 10);
 					const currentCoins = Math.max(currentCoinsFromMemory, currentCoinsFromStorage);
-					
+
 					// Calcular nuevas monedas
 					const newCoins = currentCoins + coinsEarned;
-					
+
 					// Actualizar en ambos lugares
 					memoryState.currentUserCoins = newCoins;
 					localStorage.setItem('currentUserCoins', newCoins.toString());
-					
+
 					// Actualizar UI inmediatamente
 					if (coinsLabel) {
 						coinsLabel.textContent = newCoins;
 					}
-					
+
 					console.log('✅ Respuesta correcta!', {
 						coinsEarned,
 						before: currentCoins,
 						after: newCoins,
 						doublePoints: state.doublePoints
 					});
-					
+
 					showFeedback(`¡Correcto! +${coinsEarned} monedas`);
-					
+
 					// Intentar sincronizar con el servidor (en background)
 					// IMPORTANTE: No sobrescribir si el valor local es mayor (evitar regresiones)
 					if (memoryState.currentUserId) {
@@ -522,7 +893,7 @@ export default async function renderActiveGame({ roomCode } = {}) {
 								const serverCoins = response.coins;
 								const localCoins = memoryState.currentUserCoins;
 								const finalCoins = Math.max(localCoins, serverCoins);
-								
+
 								memoryState.currentUserCoins = finalCoins;
 								localStorage.setItem('currentUserCoins', finalCoins.toString());
 								if (coinsLabel) {
@@ -584,12 +955,12 @@ async function loadInventory() {
 			console.log('⚠️ No hay currentUserId, retornando inventario vacío');
 			return [];
 		}
-		
+
 		console.log(`📥 Cargando inventario para usuario ${memoryState.currentUserId}...`);
 		const response = await makeRequest(`/users/${memoryState.currentUserId}/boosters`, 'GET');
-		
+
 		console.log('📦 Respuesta del servidor:', response);
-		
+
 		// El servidor puede retornar el inventario de diferentes formas
 		let inventory = [];
 		if (response?.success && response.inventory) {
@@ -599,19 +970,19 @@ async function loadInventory() {
 		} else if (response?.inventory && Array.isArray(response.inventory)) {
 			inventory = response.inventory;
 		}
-		
+
 		// Validar que cada item tenga quantity
 		inventory = inventory.map(item => ({
 			...item,
 			quantity: item.quantity || 0
 		}));
-		
+
 		console.log('✅ Inventario procesado:', inventory);
 		console.log('📊 Items con quantity > 0:', inventory.filter(i => i.quantity > 0).map(i => `${i.booster_name}: x${i.quantity}`));
-		
+
 		// Actualizar memoryState
 		memoryState.inventory = inventory;
-		
+
 		return inventory;
 	} catch (error) {
 		console.error('❌ Error cargando inventario:', error);
@@ -629,7 +1000,7 @@ function formatInventoryList(inventory = []) {
 		console.log('⚠️ formatInventoryList: inventario vacío');
 		return [];
 	}
-	
+
 	const formatted = inventory
 		.map((item) => {
 			const slug = boosterSlugByName[item.booster_name] || item.booster_name?.toLowerCase();
@@ -649,7 +1020,7 @@ function formatInventoryList(inventory = []) {
 			}
 			return hasQuantity;
 		});
-	
+
 	console.log(`✅ Inventario formateado: ${formatted.length} items con quantity > 0`);
 	console.log('📦 Items finales:', formatted.map(i => `${i.booster_name}: x${i.quantity}`));
 	return formatted;

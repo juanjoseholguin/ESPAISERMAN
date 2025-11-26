@@ -4,9 +4,9 @@ export default async function renderCreateRoom() {
 	const app = document.getElementById('app');
 
 	try {
-		const response = await fetch('http://localhost:5050/categories');
+		const response = await fetch(`${window.location.origin}/categories`);
 		const categories = await response.json();
-		
+
 		if (!Array.isArray(categories)) {
 			throw new Error(categories.error || 'La respuesta no es un array válido');
 		}

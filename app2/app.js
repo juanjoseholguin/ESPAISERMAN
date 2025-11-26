@@ -6,9 +6,6 @@ import renderGameResults from "./screens/gameResults.js";
 import { renderProfileEdit } from "./screens/profileEdit.js";
 import renderActiveGame from "./screens/activeGame.js";
 
-const socket = io("/", { path: "/real-time" });
-window.socket = socket;
-
 const memoryState = {
   rooms: new Map(),
   currentUserId: null,
@@ -89,7 +86,7 @@ function generateRoomCode() {
 }
 
 async function makeRequest(url, method = "GET", body) {
-  const BASE_URL = "http://localhost:5050";
+  const BASE_URL = window.location.origin;
   const options = {
     method,
     headers: {
@@ -106,4 +103,4 @@ async function makeRequest(url, method = "GET", body) {
   return response;
 }
 
-export { navigateTo, socket, makeRequest, generateRoomCode, memoryState };
+export { navigateTo, makeRequest, generateRoomCode, memoryState };

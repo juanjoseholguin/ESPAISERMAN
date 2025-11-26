@@ -58,7 +58,7 @@ export function subscribeToRoom(roomPin, onRoomUpdate) {
 // Cargar el estado completo de una sala
 export async function loadRoomState(roomPin) {
   try {
-    const response = await fetch(`http://localhost:5050/rooms/${roomPin}/players`);
+    const response = await fetch(`${window.location.origin}/rooms/${roomPin}/players`);
     if (!response.ok) {
       if (response.status === 404) {
         console.warn(`Sala ${roomPin} no encontrada`);
@@ -72,9 +72,9 @@ export async function loadRoomState(roomPin) {
       throw new Error(errorData.error || 'Error al cargar la sala');
     }
     const roomData = await response.json();
-    
+
     console.log('✅ Room state loaded (app2):', roomData);
-    
+
     // Transformar el formato para compatibilidad con el código existente
     const transformedState = {
       code: roomData.room_pin || roomPin,
@@ -91,9 +91,10 @@ export async function loadRoomState(roomPin) {
       category: roomData.room_category_id,
       maxParticipants: roomData.room_size,
       timePerQuestion: roomData.time_per_question,
-      room_status: roomData.room_status || false
+      room_status: roomData.room_status || false,
+      map_points: roomData.map_points || null // Incluir puntos personalizados del mapa
     };
-    
+
     console.log('✅ Transformed room state (app2):', transformedState);
     return transformedState;
   } catch (error) {
@@ -108,18 +109,19 @@ export async function loadRoomState(roomPin) {
 }
 
 // Crear una sala
-export async function createRoomAPI(adminUserId, categoryId, maxParticipants, timePerQuestion) {
+export async function createRoomAPI(adminUserId, categoryId, maxParticipants, timePerQuestion, mapPoints = null) {
   try {
-    console.log('📤 Creating room via API:', { adminUserId, categoryId, maxParticipants, timePerQuestion });
-    
-    const response = await fetch('http://localhost:5050/rooms', {
+    console.log('📤 Creating room via API:', { adminUserId, categoryId, maxParticipants, timePerQuestion, mapPointsCount: mapPoints?.length || 0 });
+
+    const response = await fetch(`${window.location.origin}/rooms`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         adminUserId,
         categoryId,
         maxParticipants,
-        timePerQuestion
+        timePerQuestion,
+        mapPoints: mapPoints || null
       })
     });
 
@@ -141,7 +143,7 @@ export async function createRoomAPI(adminUserId, categoryId, maxParticipants, ti
 // Unirse a una sala
 export async function joinRoomAPI(roomPin, userId, playerName, avatarUrl, avatarBg, isModerator = false) {
   try {
-    const response = await fetch(`http://localhost:5050/rooms/${roomPin}/join`, {
+    const response = await fetch(`${window.location.origin}/rooms/${roomPin}/join`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -168,7 +170,7 @@ export async function joinRoomAPI(roomPin, userId, playerName, avatarUrl, avatar
 // Iniciar una sala
 export async function startRoomAPI(roomPin, adminUserId) {
   try {
-    const response = await fetch(`http://localhost:5050/rooms/${roomPin}/start`, {
+    const response = await fetch(`${window.location.origin}/rooms/${roomPin}/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ adminUserId })
@@ -189,8 +191,8 @@ export async function startRoomAPI(roomPin, adminUserId) {
 // Obtener resultados de una sala
 export async function getRoomResultsAPI(roomPin) {
   try {
-    const response = await fetch(`http://localhost:5050/rooms/${roomPin}/results`);
-    
+    const response = await fetch(`${window.location.origin}/rooms/${roomPin}/results`);
+
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || 'Error al obtener los resultados');

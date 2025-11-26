@@ -11,9 +11,6 @@ import renderCorrectAnswer from "./screens/correctAnswer.js";
 import renderWrongAnswer from "./screens/wrongAnswer.js";
 import renderGameResults from "./screens/gameResults.js";
 
-const socket = io("/", { path: "/real-time" });
-window.socket = socket;
-
 // Configurar Supabase para Realtime (se configuran desde index.html)
 // Estas variables se deben definir en index.html antes de cargar este script
 if (typeof window.SUPABASE_URL === 'undefined') {
@@ -52,11 +49,11 @@ if (savedUser && savedUserId) {
   if (savedCoins) memoryState.currentUserCoins = parseInt(savedCoins, 10);
   memoryState.currentUserAvatar = savedAvatar || '/assets/images/Group 4.png';
   memoryState.currentUserBgColor = savedBgColor || '#F9D648';
-  
+
   // Cargar inventario desde el servidor al iniciar la app
   (async () => {
     try {
-      const response = await fetch(`http://localhost:5050/users/${memoryState.currentUserId}/boosters`);
+      const response = await fetch(`${window.location.origin}/users/${memoryState.currentUserId}/boosters`);
       if (response.ok) {
         const data = await response.json();
         if (data?.success && data.inventory) {
@@ -68,7 +65,7 @@ if (savedUser && savedUserId) {
       console.warn('⚠️ No se pudo cargar el inventario al iniciar:', error);
     }
   })();
-  
+
   route = { path: "/main", data: {} };
 } else {
   route = { path: "/", data: {} };
@@ -174,7 +171,7 @@ async function updateCoins(delta) {
 }
 
 async function makeRequest(url, method = "GET", body) {
-  const BASE_URL = "http://localhost:5050";
+  const BASE_URL = window.location.origin;
   const options = {
     method,
     headers: {
@@ -193,4 +190,4 @@ async function makeRequest(url, method = "GET", body) {
   return response;
 }
 
-export { navigateTo, socket, makeRequest, createRoom, joinRoom, memoryState, updateCoins };
+export { navigateTo, makeRequest, createRoom, joinRoom, memoryState, updateCoins };

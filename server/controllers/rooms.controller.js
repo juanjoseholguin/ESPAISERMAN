@@ -12,16 +12,16 @@ const {
 // Crear una sala
 const createRoomController = async (req, res) => {
   try {
-    const { adminUserId, categoryId, maxParticipants, timePerQuestion } = req.body;
+    const { adminUserId, categoryId, maxParticipants, timePerQuestion, mapPoints } = req.body;
 
-    console.log(`📥 POST /rooms requested:`, { adminUserId, categoryId, maxParticipants, timePerQuestion });
+    console.log(`📥 POST /rooms requested:`, { adminUserId, categoryId, maxParticipants, timePerQuestion, mapPointsCount: mapPoints?.length || 0 });
 
     if (!adminUserId || !categoryId || !maxParticipants || !timePerQuestion) {
       return res.status(400).json({ error: 'Faltan datos requeridos' });
     }
 
-    const result = await createRoom(adminUserId, categoryId, maxParticipants, timePerQuestion);
-    
+    const result = await createRoom(adminUserId, categoryId, maxParticipants, timePerQuestion, mapPoints);
+
     if (result.success) {
       console.log(`✅ Room created successfully, returning:`, result.data);
       res.json(result.data);
@@ -40,7 +40,7 @@ const getRoomByPinController = async (req, res) => {
   try {
     const { roomPin } = req.params;
     const result = await getRoomByPin(roomPin);
-    
+
     if (result.success) {
       res.json(result.data);
     } else {
@@ -57,9 +57,9 @@ const getRoomWithPlayersController = async (req, res) => {
   try {
     const { roomPin } = req.params;
     console.log(`📥 GET /rooms/${roomPin}/players requested`);
-    
+
     const result = await getRoomWithPlayers(roomPin);
-    
+
     if (result.success) {
       console.log(`✅ Returning room data with ${result.data.players?.length || 0} players`);
       res.json(result.data);
@@ -86,7 +86,7 @@ const joinRoomController = async (req, res) => {
     }
 
     const result = await joinRoom(roomPin, userId, playerName, avatarUrl, avatarBg, isModerator);
-    
+
     if (result.success) {
       console.log(`✅ Join successful for user ${userId} in room ${roomPin}`);
       res.json(result.data);
@@ -111,7 +111,7 @@ const updatePlayerScoreController = async (req, res) => {
     }
 
     const result = await updatePlayerScore(roomPin, userId, points);
-    
+
     if (result.success) {
       res.json(result.data);
     } else {
@@ -134,7 +134,7 @@ const startRoomController = async (req, res) => {
     }
 
     const result = await startRoom(roomPin, adminUserId);
-    
+
     if (result.success) {
       res.json(result.data);
     } else {
@@ -151,7 +151,7 @@ const getRoomResultsController = async (req, res) => {
   try {
     const { roomPin } = req.params;
     const result = await getRoomResults(roomPin);
-    
+
     if (result.success) {
       res.json(result.data);
     } else {
@@ -168,7 +168,7 @@ const leaveRoomController = async (req, res) => {
   try {
     const { roomPin, userId } = req.params;
     const result = await leaveRoom(roomPin, userId);
-    
+
     if (result.success) {
       res.json({ success: true });
     } else {
