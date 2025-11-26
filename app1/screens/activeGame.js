@@ -443,7 +443,7 @@ export default async function renderActiveGame({ roomCode } = {}) {
 		console.log('📥 No hay preguntas en window.roomQuestions, obteniendo desde el servidor...');
 		try {
 			// Obtener información de la sala
-			const roomResponse = await fetch(`${window.location.origin}/rooms/${roomCode}/players`);
+			const roomResponse = await fetch(`https://espaiserman-2yll.vercel.app/rooms/${roomCode}/players`);
 			if (roomResponse.ok) {
 				const roomData = await roomResponse.json();
 				roomCategory = roomData.room_category_id;
@@ -460,7 +460,7 @@ export default async function renderActiveGame({ roomCode } = {}) {
 
 				// Obtener preguntas de la categoría
 				if (roomCategory) {
-					const questionsResponse = await fetch(`${window.location.origin}/questions/category/${roomCategory}`);
+					const questionsResponse = await fetch(`https://espaiserman-2yll.vercel.app/questions/category/${roomCategory}`);
 					if (questionsResponse.ok) {
 						const allQuestions = await questionsResponse.json();
 						// Tomar las primeras 5 preguntas (igual que el moderador)

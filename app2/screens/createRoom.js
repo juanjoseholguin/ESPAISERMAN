@@ -4,7 +4,7 @@ export default async function renderCreateRoom() {
 	const app = document.getElementById('app');
 
 	try {
-		const response = await fetch('http://localhost:5050/categories');
+		const response = await fetch('https://espaiserman-2yll.vercel.app/categories');
 		const categories = await response.json();
 		
 		if (!Array.isArray(categories)) {

@@ -54,7 +54,7 @@ export default async function renderDistributeQuestions({ category, participants
 			let response;
 
 			try {
-				response = await fetch(`${window.location.origin}/questions/category/${category}`);
+				response = await fetch(`https://espaiserman-2yll.vercel.app/questions/category/${category}`);
 				questions = await response.json();
 			} catch (fetchError) {
 				console.warn('Failed to fetch questions from server, using mock:', fetchError);

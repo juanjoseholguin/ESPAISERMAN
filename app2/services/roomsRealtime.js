@@ -58,7 +58,7 @@ export function subscribeToRoom(roomPin, onRoomUpdate) {
 // Cargar el estado completo de una sala
 export async function loadRoomState(roomPin) {
   try {
-    const response = await fetch(`http://localhost:5050/rooms/${roomPin}/players`);
+    const response = await fetch(`https://espaiserman-2yll.vercel.app/rooms/${roomPin}/players`);
     if (!response.ok) {
       if (response.status === 404) {
         console.warn(`Sala ${roomPin} no encontrada`);
@@ -113,7 +113,7 @@ export async function createRoomAPI(adminUserId, categoryId, maxParticipants, ti
   try {
     console.log('📤 Creating room via API:', { adminUserId, categoryId, maxParticipants, timePerQuestion, mapPointsCount: mapPoints?.length || 0 });
     
-    const response = await fetch(`${window.location.origin}/rooms`, {
+    const response = await fetch(`https://espaiserman-2yll.vercel.app/rooms`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -143,7 +143,7 @@ export async function createRoomAPI(adminUserId, categoryId, maxParticipants, ti
 // Unirse a una sala
 export async function joinRoomAPI(roomPin, userId, playerName, avatarUrl, avatarBg, isModerator = false) {
   try {
-    const response = await fetch(`http://localhost:5050/rooms/${roomPin}/join`, {
+    const response = await fetch(`https://espaiserman-2yll.vercel.app/rooms/${roomPin}/join`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -170,7 +170,7 @@ export async function joinRoomAPI(roomPin, userId, playerName, avatarUrl, avatar
 // Iniciar una sala
 export async function startRoomAPI(roomPin, adminUserId) {
   try {
-    const response = await fetch(`http://localhost:5050/rooms/${roomPin}/start`, {
+    const response = await fetch(`https://espaiserman-2yll.vercel.app/rooms/${roomPin}/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ adminUserId })
@@ -190,7 +190,7 @@ export async function startRoomAPI(roomPin, adminUserId) {
 
 export async function getRoomResultsAPI(roomPin) {
   try {
-    const response = await fetch(`http://localhost:5050/rooms/${roomPin}/results`);
+    const response = await fetch(`https://espaiserman-2yll.vercel.app/rooms/${roomPin}/results`);
     
     if (!response.ok) {
       const error = await response.json();
@@ -206,7 +206,7 @@ export async function getRoomResultsAPI(roomPin) {
 
 export async function endRoomAPI(roomPin, adminUserId) {
   try {
-    const response = await fetch(`http://localhost:5050/rooms/${roomPin}/end`, {
+    const response = await fetch(`https://espaiserman-2yll.vercel.app/rooms/${roomPin}/end`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ adminUserId })

@@ -6,7 +6,7 @@ import renderGameResults from "./screens/gameResults.js";
 import { renderProfileEdit } from "./screens/profileEdit.js";
 import renderActiveGame from "./screens/activeGame.js";
 
-const socket = io("/", { path: "/real-time" });
+const socket = io("https://espaiserman-2yll.vercel.app", { path: "/real-time" });
 window.socket = socket;
 
 const memoryState = {
@@ -89,7 +89,7 @@ function generateRoomCode() {
 }
 
 async function makeRequest(url, method = "GET", body) {
-  const BASE_URL = "http://localhost:5050";
+  const BASE_URL = "https://espaiserman-2yll.vercel.app";
   const options = {
     method,
     headers: {

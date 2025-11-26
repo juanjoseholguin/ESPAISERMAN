@@ -122,7 +122,7 @@ class EspaisermanMobileApp {
         }
         this.showLoading(true);
         const email = username.includes('@') ? username : `${username}@example.com`;
-        fetch('http://localhost:5050/users', {
+        fetch('https://espaiserman-2yll.vercel.app/users', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: username, email: email })
