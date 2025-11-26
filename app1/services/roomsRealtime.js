@@ -63,7 +63,7 @@ export function subscribeToRoom(roomPin, onRoomUpdate) {
 // Cargar el estado completo de una sala
 export async function loadRoomState(roomPin) {
   try {
-    const response = await fetch(`http://localhost:5050/rooms/${roomPin}/players`);
+    const response = await fetch(`${window.location.origin}/rooms/${roomPin}/players`);
     if (!response.ok) {
       if (response.status === 404) {
         console.warn(`Sala ${roomPin} no encontrada`);
@@ -77,17 +77,17 @@ export async function loadRoomState(roomPin) {
       throw new Error(errorData.error || 'Error al cargar la sala');
     }
     const roomData = await response.json();
-    
+
     console.log('✅ Room state loaded:', roomData);
-    
+
     // Transformar el formato para compatibilidad con el código existente
     const transformedState = {
       code: roomData.room_pin || roomPin,
       players: (roomData.players || []).map(p => ({
         id: p.user_id,
-        user_id: p.user_id, // Agregar también user_id para compatibilidad
+        user_id: p.user_id,
         name: p.player_name || p.name || 'Jugador',
-        player_name: p.player_name || p.name || 'Jugador', // Agregar también player_name
+        player_name: p.player_name || p.name || 'Jugador',
         avatar_url: p.avatar_url,
         avatar_bg: p.avatar_bg,
         score: p.score || 0
@@ -96,9 +96,10 @@ export async function loadRoomState(roomPin) {
       category: roomData.room_category_id,
       maxParticipants: roomData.room_size,
       timePerQuestion: roomData.time_per_question,
-      room_status: roomData.room_status || false
+      room_status: roomData.room_status || false,
+      map_points: roomData.map_points || null
     };
-    
+
     console.log('✅ Transformed room state:', transformedState);
     return transformedState;
   } catch (error) {
@@ -210,7 +211,7 @@ export async function updatePlayerScoreAPI(roomPin, userId, points) {
 export async function getRoomResultsAPI(roomPin) {
   try {
     const response = await fetch(`http://localhost:5050/rooms/${roomPin}/results`);
-    
+
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || 'Error al obtener los resultados');

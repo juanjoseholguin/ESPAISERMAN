@@ -404,7 +404,7 @@ export default async function renderActiveGame({ roomCode } = {}) {
 		navigateTo('/results', { roomCode });
 		return;
 	}
-	
+
 	const app = document.getElementById('app');
 	app.innerHTML = `
     <div class="screen active">
@@ -412,7 +412,7 @@ export default async function renderActiveGame({ roomCode } = {}) {
         <p style="font-weight:600; color:#1e3a8a;">Cargando partida...</p>
       </div>
     </div>`;
-	
+
 	if (roomCode) {
 		const { checkRoomStatus } = await import('../services/roomsRealtime.js');
 		const roomStatus = await checkRoomStatus(roomCode);
@@ -422,7 +422,7 @@ export default async function renderActiveGame({ roomCode } = {}) {
 			return;
 		}
 	}
-	
+
 	let currentQuestion = window.currentQuestionIndex || 1;
 	if (roomCode) {
 		const savedIndex = localStorage.getItem(`room_${roomCode}_questionIndex`);
@@ -443,17 +443,24 @@ export default async function renderActiveGame({ roomCode } = {}) {
 		console.log('📥 No hay preguntas en window.roomQuestions, obteniendo desde el servidor...');
 		try {
 			// Obtener información de la sala
-			const roomResponse = await fetch(`http://localhost:5050/rooms/${roomCode}`);
+			const roomResponse = await fetch(`${window.location.origin}/rooms/${roomCode}/players`);
 			if (roomResponse.ok) {
 				const roomData = await roomResponse.json();
 				roomCategory = roomData.room_category_id;
 				timePerQuestion = roomData.time_per_question || 30;
 
+				// Cargar puntos del mapa personalizados
+				if (roomData.map_points && Array.isArray(roomData.map_points)) {
+					window.roomMapPoints = roomData.map_points;
+					setCustomPoints(roomData.map_points);
+					console.log('📍 Puntos del mapa cargados desde el servidor:', window.roomMapPoints);
+				}
+
 				console.log(`✅ Sala encontrada, categoría: ${roomCategory}, tiempo: ${timePerQuestion}`);
 
 				// Obtener preguntas de la categoría
 				if (roomCategory) {
-					const questionsResponse = await fetch(`http://localhost:5050/questions/category/${roomCategory}`);
+					const questionsResponse = await fetch(`${window.location.origin}/questions/category/${roomCategory}`);
 					if (questionsResponse.ok) {
 						const allQuestions = await questionsResponse.json();
 						// Tomar las primeras 5 preguntas (igual que el moderador)
@@ -526,7 +533,7 @@ export default async function renderActiveGame({ roomCode } = {}) {
 
 		if (inventoryResponse && inventoryResponse.length > 0) {
 			memoryState.inventory = inventoryResponse;
-			
+
 			const activePowerups = [];
 			inventoryResponse.forEach(item => {
 				const slug = boosterSlugByName[item.booster_name] || item.booster_name?.toLowerCase();
@@ -550,7 +557,7 @@ export default async function renderActiveGame({ roomCode } = {}) {
 	const activePowerups = JSON.parse(localStorage.getItem('activePowerups') || '[]');
 	if (activePowerups.length > 0 && (!inventoryResponse || inventoryResponse.length === 0)) {
 		console.log('📦 Usando potenciadores de localStorage:', activePowerups);
-		
+
 		try {
 			const boostersResponse = await makeRequest('/boosters', 'GET');
 			let allBoosters = [];
@@ -559,7 +566,7 @@ export default async function renderActiveGame({ roomCode } = {}) {
 			} else if (Array.isArray(boostersResponse)) {
 				allBoosters = boostersResponse;
 			}
-			
+
 			const mappedInventory = activePowerups.reduce((acc, slug) => {
 				const existing = acc.find(i => i.slug === slug);
 				if (existing) {
@@ -572,12 +579,12 @@ export default async function renderActiveGame({ roomCode } = {}) {
 							break;
 						}
 					}
-					
-					const boosterFromDB = allBoosters.find(b => 
-						b.booster_name === name || 
+
+					const boosterFromDB = allBoosters.find(b =>
+						b.booster_name === name ||
 						b.booster_name?.toLowerCase() === name?.toLowerCase()
 					);
-					
+
 					acc.push({
 						booster_id: boosterFromDB?.id || null,
 						booster_name: name || slug,
@@ -655,7 +662,7 @@ export default async function renderActiveGame({ roomCode } = {}) {
 
 	let formattedInventory = await formatInventoryList(inventoryResponse);
 	console.log('🎮 Inventario formateado:', formattedInventory);
-	
+
 	if (formattedInventory.length === 0 && activePowerups.length > 0) {
 		console.log('📦 Creando inventario desde localStorage...');
 		formattedInventory = activePowerups.reduce((acc, slug) => {
@@ -865,15 +872,17 @@ function renderQuestionScreen({ app, roomCode, currentQuestion, formattedQuestio
 			if (currentQuestion < formattedQuestions.length) {
 				const nextQuestion = currentQuestion + 1;
 				window.currentQuestionIndex = nextQuestion;
+				window.showingQuestion = false;
 				if (roomCode) {
 					localStorage.setItem(`room_${roomCode}_questionIndex`, nextQuestion.toString());
 					console.log(`💾 Guardado en localStorage: room_${roomCode}_questionIndex = ${nextQuestion}`);
 				}
-				console.log('➡️ Navegando a siguiente pregunta:', window.currentQuestionIndex);
+				console.log('➡️ Volviendo a pantalla intermedia bloqueada para pregunta:', window.currentQuestionIndex);
 				navigateTo('/active', { roomCode });
 			} else {
 				console.log('🏁 Partida terminada, navegando a resultados');
 				window.currentQuestionIndex = 1;
+				window.showingQuestion = false;
 				if (roomCode) {
 					localStorage.removeItem(`room_${roomCode}_questionIndex`);
 				}
@@ -891,7 +900,7 @@ function renderQuestionScreen({ app, roomCode, currentQuestion, formattedQuestio
 
 		const applyPowerupEffect = (slug) => {
 			console.log('🎯 Aplicando efecto de potenciador:', { slug, timeLeft: state.timeLeft, doublePoints: state.doublePoints });
-			
+
 			switch (slug) {
 				case 'guaro':
 					state.timeLeft += 5;
@@ -970,12 +979,12 @@ function renderQuestionScreen({ app, roomCode, currentQuestion, formattedQuestio
 
 			if (!boosterId || boosterId === 0 || boosterId === 'null' || boosterId === 'undefined') {
 				console.error('❌ boosterId inválido:', boosterId);
-				
+
 				if (!boosterId || boosterId === 'null' || boosterId === 'undefined') {
 					const card = button.closest('.power-card');
 					const boosterName = card?.querySelector('[style*="font-weight:800"]')?.textContent;
 					console.log('🔍 Buscando booster por nombre:', boosterName);
-					
+
 					try {
 						const boostersResponse = await makeRequest('/boosters', 'GET');
 						let allBoosters = [];
@@ -984,12 +993,12 @@ function renderQuestionScreen({ app, roomCode, currentQuestion, formattedQuestio
 						} else if (Array.isArray(boostersResponse)) {
 							allBoosters = boostersResponse;
 						}
-						
-						const foundBooster = allBoosters.find(b => 
-							b.booster_name === boosterName || 
+
+						const foundBooster = allBoosters.find(b =>
+							b.booster_name === boosterName ||
 							b.booster_name?.toLowerCase() === boosterName?.toLowerCase()
 						);
-						
+
 						if (foundBooster && foundBooster.id) {
 							boosterId = foundBooster.id;
 							card.setAttribute('data-booster-id', boosterId);
@@ -1018,29 +1027,27 @@ function renderQuestionScreen({ app, roomCode, currentQuestion, formattedQuestio
 				button.disabled = false;
 				return;
 			}
-			
+
 			console.log('🎮 Usando potenciador:', { boosterId: numericBoosterId, slug, userId: memoryState.currentUserId });
 			const response = await makeRequest(`/users/${memoryState.currentUserId}/boosters/consume`, 'POST', {
 				boosterId: numericBoosterId,
 			});
-			
+
 			console.log('📦 Respuesta del servidor al consumir:', response);
-				
+
 			if (response.error) {
 				console.error('❌ Error del servidor:', response.error);
 				alert(response.error);
 				button.disabled = false;
 				return;
 			}
-				
-			if (response.success && response.inventory) {
+
+			if (response.success) {
 				console.log('✅ Potenciador consumido exitosamente, aplicando efecto...');
-				memoryState.inventory = response.inventory;
-				updatePowerupQuantities(response.inventory);
-				applyPowerupEffect(slug);
-				showFeedback(`✅ Activaste ${boosterNameBySlug[slug] || 'tu potenciador'}.`);
-				console.log('✅ Potenciador usado y efecto aplicado');
-					
+				if (response.inventory) {
+					memoryState.inventory = response.inventory;
+					updatePowerupQuantities(response.inventory);
+
 					const formattedInventory = await formatInventoryList(response.inventory);
 					const powerupsBanner = renderPowerupsBar(formattedInventory);
 					const existingBanner = document.querySelector('[style*="Potenciadores disponibles"]')?.closest('div[style*="padding:8px"]');
@@ -1057,10 +1064,14 @@ function renderQuestionScreen({ app, roomCode, currentQuestion, formattedQuestio
 							});
 						}, 100);
 					}
-				} else {
-					console.error('❌ Respuesta inválida del servidor:', response);
-					alert('Error al usar el potenciador');
 				}
+				applyPowerupEffect(slug);
+				showFeedback(`✅ Activaste ${boosterNameBySlug[slug] || 'tu potenciador'}.`);
+				console.log('✅ Potenciador usado y efecto aplicado');
+			} else {
+				console.error('❌ Respuesta inválida del servidor:', response);
+				alert(response.error || 'Error al usar el potenciador');
+			}
 			} catch (error) {
 				console.error('❌ Error usando potenciador:', error);
 				alert('No se pudo usar el potenciador, intenta de nuevo.');
@@ -1181,7 +1192,7 @@ function renderQuestionScreen({ app, roomCode, currentQuestion, formattedQuestio
 		});
 
 		startTimer();
-		
+
 		// Verificación periódica de estado de sala (backup)
 		if (roomCode) {
 			const roomCheckInterval = setInterval(async () => {
@@ -1219,7 +1230,7 @@ function renderQuestionScreen({ app, roomCode, currentQuestion, formattedQuestio
 					console.error('Error verificando estado de sala:', error);
 				}
 			}, 3000);
-			
+
 			window.roomCheckInterval = roomCheckInterval;
 		}
 	}, 120);
@@ -1271,7 +1282,7 @@ async function loadInventory() {
 				console.log(`📦 Item procesado:`, processed);
 				return processed;
 			});
-			
+
 			if (inventory.some(item => !item.booster_id)) {
 				console.log('⚠️ Algunos items no tienen booster_id, buscando en BD...');
 				try {
@@ -1282,10 +1293,10 @@ async function loadInventory() {
 					} else if (Array.isArray(boostersResponse)) {
 						allBoosters = boostersResponse;
 					}
-					
+
 					inventory = inventory.map(item => {
 						if (!item.booster_id && allBoosters.length > 0) {
-							const found = allBoosters.find(b => 
+							const found = allBoosters.find(b =>
 								(b.booster_name || '').toLowerCase() === (item.booster_name || '').toLowerCase()
 							);
 							if (found && found.id) {
@@ -1299,7 +1310,7 @@ async function loadInventory() {
 					console.error('Error cargando boosters para asignar IDs:', error);
 				}
 			}
-			
+
 			inventory = inventory.filter(item => {
 				const hasValidData = item.booster_id && item.booster_name && item.quantity > 0;
 				if (!hasValidData) {
@@ -1349,7 +1360,7 @@ async function formatInventoryList(inventory = []) {
 		.map((item) => {
 			const boosterName = item.booster_name || item.name || '';
 			let slug = boosterSlugByName[boosterName];
-			
+
 			if (!slug) {
 				for (const [key, value] of Object.entries(boosterSlugByName)) {
 					if (boosterName.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(boosterName.toLowerCase())) {
@@ -1358,7 +1369,7 @@ async function formatInventoryList(inventory = []) {
 					}
 				}
 			}
-			
+
 			if (!slug) {
 				slug = boosterName.toLowerCase().replace(/\s+/g, '_');
 			}
@@ -1368,7 +1379,7 @@ async function formatInventoryList(inventory = []) {
 				if (allBoosters.length > 0) {
 					const foundBooster = allBoosters.find(b => {
 						const dbName = b.booster_name || '';
-						return dbName === boosterName || 
+						return dbName === boosterName ||
 							dbName.toLowerCase() === boosterName.toLowerCase() ||
 							dbName.toLowerCase().includes(boosterName.toLowerCase()) ||
 							boosterName.toLowerCase().includes(dbName.toLowerCase());
