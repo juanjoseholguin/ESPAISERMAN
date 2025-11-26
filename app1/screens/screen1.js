@@ -7,7 +7,7 @@ export default function renderScreen1() {
         <div class="main-content" style="justify-content: space-between;">
             <div class="logo-section">
                 <div class="group4-container">
-                    <img src="/assets/images/Group 4.png" alt="Espaiserman Group 4" class="group4-image">
+                    <img src="assets/images/Group 4.png" alt="Espaiserman Group 4" class="group4-image">
                 </div>
             </div>
 
@@ -27,7 +27,7 @@ export default function renderScreen1() {
         <div class="main-content">
             <div class="logo-section">
                 <div class="group4-container">
-                    <img src="/assets/images/Group 4.png" alt="Espaiserman Group 4" class="group4-image">
+                    <img src="assets/images/Group 4.png" alt="Espaiserman Group 4" class="group4-image">
                 </div>
             </div>
 
@@ -58,7 +58,7 @@ export default function renderScreen1() {
         <div class="main-content">
             <div class="logo-section">
                 <div class="group4-container">
-                    <img src="/assets/images/Group 4.png" alt="Espaiserman Group 4" class="group4-image">
+                    <img src="assets/images/Group 4.png" alt="Espaiserman Group 4" class="group4-image">
                 </div>
             </div>
             <div class="form-section">

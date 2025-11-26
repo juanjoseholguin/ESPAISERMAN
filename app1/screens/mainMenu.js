@@ -8,13 +8,13 @@ export default function renderMainMenu() {
       <div class="main-content" style="gap:24px; align-items:center;">
         <div style="display:flex; justify-content:space-between; align-items:center; width:100%; max-width:360px;">
           <div style="display:flex; align-items:center; gap:8px; background:#FFE28A; padding:8px 16px; border-radius:16px;">
-            <img src="/assets/images/Group 19453.png" alt="coin" style="width:24px; height:24px;">
+            <img src="assets/images/Group 19453.png" alt="coin" style="width:24px; height:24px;">
             <span style="font-weight:800; color:#1e3a8a;">${coins}</span>
           </div>
         </div>
 
         <div class="group4-container" style="margin-top:12px;">
-          <img src="/assets/images/Group 4.png" alt="Espaiserman Group 4" class="group4-image" style="max-width:360px;">
+          <img src="assets/images/Group 4.png" alt="Espaiserman Group 4" class="group4-image" style="max-width:360px;">
         </div>
 
         <button id="btn-join" class="btn-primary" style="max-width:360px;">Unirme a una sala</button>

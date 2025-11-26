@@ -7,7 +7,7 @@ export default async function renderLobby({ code } = {}) {
       <button class="back-button" id="back-lobby"><div class="back-arrow"></div></button>
       <div class="main-content" style="gap:16px;">
         <div class="group4-container" style="margin-top:12px; text-align:center;">
-          <img src="/assets/images/Group 4.png" alt="Espaiserman" class="group4-image" style="max-width:220px;">
+          <img src="assets/images/Group 4.png" alt="Espaiserman" class="group4-image" style="max-width:220px;">
         </div>
         <h1 class="form-title">Los que están en el parche</h1>
         <div class="form-container" style="text-align:center;">

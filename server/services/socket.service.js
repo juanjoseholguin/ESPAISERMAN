@@ -70,7 +70,7 @@ const initSocketInstance = (httpServer) => {
 			room.players.push({
 				id: socket.id,
 				name: playerName,
-				avatar_url: avatar_url || '/assets/images/Group 4.png',
+				avatar_url: avatar_url || 'assets/images/Group 4.png',
 				avatar_bg: avatar_bg || '#F9D648',
 				score: 0,
 			});

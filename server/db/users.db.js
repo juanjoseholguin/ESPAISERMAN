@@ -65,7 +65,7 @@ const createUserInDB = async (user) => {
       email: user.email || `${user.name}@example.com`,
       password: user.password || null,
       "espaiser-coin": 100,
-      avatar_url: '/assets/images/Group 4.png',
+      avatar_url: 'assets/images/Group 4.png',
       avatar_bg: randomColor
     }])
     .select();

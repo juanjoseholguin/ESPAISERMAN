@@ -7,7 +7,7 @@ export default function renderGameResults({ results = [] }) {
     <div class="screen active">
       <div class="main-content" style="gap:16px;">
         <div class="group4-container" style="margin-top:12px; text-align:center;">
-          <img src="/assets/images/Group 4.png" alt="Espaiserman" class="group4-image" style="max-width:220px;">
+          <img src="assets/images/Group 4.png" alt="Espaiserman" class="group4-image" style="max-width:220px;">
         </div>
         <h1 class="form-title">¡Se acabó esta vuelta!</h1>
         <p style="text-align:center; font-size:18px; margin-top:-16px; margin-bottom:8px; color:#1e3a8a; font-weight:bold;">"¡Rosca! ¡Rosca!"<br/>El ganador es...</p>

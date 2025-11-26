@@ -62,7 +62,7 @@ export const renderProfileEdit = async () => {
 		profile?.avatar_url ||
 		memoryState.currentUserAvatar ||
 		localStorage.getItem('currentUserAvatar') ||
-		'/assets/images/Group 4.png';
+		'assets/images/Group 4.png';
 	const userBgColor =
 		profile?.avatar_bg || memoryState.currentUserBgColor || localStorage.getItem('currentUserBgColor') || '#F9D648';
 	const coins = profile?.coins ?? memoryState.currentUserCoins ?? parseInt(localStorage.getItem('currentUserCoins') || '0', 10);
@@ -103,7 +103,7 @@ export const renderProfileEdit = async () => {
           </div>
 
           <div style="display:flex; justify-content:center; align-items:center; gap:8px; background:#FFE28A; padding:8px 16px; border-radius:12px; margin-bottom:12px;">
-            <img src="/assets/images/Group 19453.png" style="width:20px; height:20px;">
+            <img src="assets/images/Group 19453.png" style="width:20px; height:20px;">
             <span style="font-weight:800; color:#1e3a8a;">${coins} monedas</span>
           </div>
 
@@ -151,14 +151,14 @@ window.openAvatarPicker = () => {
     <div style="background:#fff; width:90%; max-width:360px; border-radius:16px; padding:16px;">
       <h3 style="margin:0 0 8px 0; text-align:center;">Elige tu avatar</h3>
       <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
-        <button class="preset-avatar" data-src="/assets/images/Group 4.png" style="border:none; background:#F3F4F6; border-radius:12px; padding:8px;">
-          <img src="/assets/images/Group 4.png" style="width:100%; height:80px; object-fit:contain;">
+        <button class="preset-avatar" data-src="assets/images/Group 4.png" style="border:none; background:#F3F4F6; border-radius:12px; padding:8px;">
+          <img src="assets/images/Group 4.png" style="width:100%; height:80px; object-fit:contain;">
         </button>
-        <button class="preset-avatar" data-src="/assets/images/spiderman america.png" style="border:none; background:#F3F4F6; border-radius:12px; padding:8px;">
-          <img src="/assets/images/spiderman america.png" style="width:100%; height:80px; object-fit:contain;">
+        <button class="preset-avatar" data-src="assets/images/spiderman america.png" style="border:none; background:#F3F4F6; border-radius:12px; padding:8px;">
+          <img src="assets/images/spiderman america.png" style="width:100%; height:80px; object-fit:contain;">
         </button>
-        <button class="preset-avatar" data-src="/assets/images/Captura de Pantalla 2025-09-07 a la(s) 8.49.54 p.m. 1.png" style="border:none; background:#F3F4F6; border-radius:12px; padding:8px;">
-          <img src="/assets/images/Captura de Pantalla 2025-09-07 a la(s) 8.49.54 p.m. 1.png" style="width:100%; height:80px; object-fit:contain;">
+        <button class="preset-avatar" data-src="assets/images/Captura de Pantalla 2025-09-07 a la(s) 8.49.54 p.m. 1.png" style="border:none; background:#F3F4F6; border-radius:12px; padding:8px;">
+          <img src="assets/images/Captura de Pantalla 2025-09-07 a la(s) 8.49.54 p.m. 1.png" style="width:100%; height:80px; object-fit:contain;">
         </button>
       </div>
       <div id="dropzone" style="margin-top:12px; border:2px dashed #9CA3AF; border-radius:12px; padding:12px; text-align:center; color:#6B7280;">Arrastra una imagen aquí o <button id="pick-file" class="register-link" style="background:none; border:none; color:#1E3A8A; text-decoration:underline;">explora tu equipo</button></div>

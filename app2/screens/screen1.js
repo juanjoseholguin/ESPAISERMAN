@@ -7,7 +7,7 @@ export default function renderLoginRegister() {
         <div class="main-content" style="justify-content: space-between;">
             <div class="logo-section">
                 <div class="group4-container">
-                    <img src="/assets/images/Group 4.png" alt="Espaiserman Group 4" class="group4-image">
+                    <img src="assets/images/Group 4.png" alt="Espaiserman Group 4" class="group4-image">
                 </div>
             </div>
             <div style="display:flex; flex-direction:column; gap:24px; padding: 0 20px 24px 20px;">
@@ -26,7 +26,7 @@ export default function renderLoginRegister() {
         <div class="main-content">
             <div class="logo-section">
                 <div class="group4-container">
-                    <img src="/assets/images/Group 4.png" alt="Espaiserman Group 4" class="group4-image">
+                    <img src="assets/images/Group 4.png" alt="Espaiserman Group 4" class="group4-image">
                 </div>
             </div>
 
@@ -57,7 +57,7 @@ export default function renderLoginRegister() {
         <div class="main-content">
             <div class="logo-section">
                 <div class="group4-container">
-                    <img src="/assets/images/Group 4.png" alt="Espaiserman Group 4" class="group4-image">
+                    <img src="assets/images/Group 4.png" alt="Espaiserman Group 4" class="group4-image">
                 </div>
             </div>
             <div class="form-section">

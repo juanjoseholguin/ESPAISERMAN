@@ -83,10 +83,10 @@ function setupInventoryRealtime(userId) {
 }
 
 const boosterAssets = {
-	empanada: '/assets/images/empanada.png',
-	guaro: '/assets/images/guaro.png',
-	chicharron: '/assets/images/chicharron.png',
-	cafe: '/assets/images/cafe.png',
+	empanada: 'assets/images/empanada.png',
+	guaro: 'assets/images/guaro.png',
+	chicharron: 'assets/images/chicharron.png',
+	cafe: 'assets/images/cafe.png',
 };
 
 const boosterSlugByName = {
@@ -128,7 +128,7 @@ function renderIntermedioScreen({ roomCode, currentQuestion, totalQuestions, for
     <div class="screen active">
       <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px;">
         <div style="display:flex; align-items:center; gap:6px; background:#FFE28A; padding:6px 12px; border-radius:12px;">
-          <img src="/assets/images/Group 19453.png" alt="coin" style="width:20px; height:20px;">
+          <img src="assets/images/Group 19453.png" alt="coin" style="width:20px; height:20px;">
           <span style="font-weight:800; color:#1e3a8a; font-size:15px;">${playerScore || 0}</span>
         </div>
         <div style="font-weight:800; color:#1e3a8a; font-size:14px;">${playerName || 'Jugador'}</div>
@@ -590,7 +590,7 @@ export default async function renderActiveGame({ roomCode } = {}) {
 						booster_name: name || slug,
 						quantity: 1,
 						slug: slug,
-						icon: boosterAssets[slug] || '/assets/images/Group 4.png',
+						icon: boosterAssets[slug] || 'assets/images/Group 4.png',
 						description: boosterDescriptions[slug] || '',
 					});
 				}
@@ -681,7 +681,7 @@ export default async function renderActiveGame({ roomCode } = {}) {
 					booster_name: name || slug,
 					quantity: 1,
 					slug: slug,
-					icon: boosterAssets[slug] || '/assets/images/Group 4.png',
+					icon: boosterAssets[slug] || 'assets/images/Group 4.png',
 					description: boosterDescriptions[slug] || '',
 				});
 			}
@@ -730,7 +730,7 @@ function renderQuestionScreen({ app, roomCode, currentQuestion, formattedQuestio
     <div class="screen active">
       <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; flex-wrap:wrap; gap:8px;">
         <div style="display:flex; align-items:center; gap:6px; background:#FFE28A; padding:6px 12px; border-radius:12px; min-width:fit-content;">
-          <img src="/assets/images/Group 19453.png" alt="coin" style="width:20px; height:20px; flex-shrink:0;">
+          <img src="assets/images/Group 19453.png" alt="coin" style="width:20px; height:20px; flex-shrink:0;">
           <span id="coins-balance" style="font-weight:800; color:#1e3a8a; font-size:15px; white-space:nowrap;">${(() => {
 			const fromMemory = memoryState.currentUserCoins;
 			const fromStorage = parseInt(localStorage.getItem('currentUserCoins') || '0', 10);
@@ -1401,7 +1401,7 @@ async function formatInventoryList(inventory = []) {
 				booster_name: boosterName,
 				quantity: item.quantity || 0,
 				slug,
-				icon: boosterAssets[slug] || '/assets/images/Group 4.png',
+				icon: boosterAssets[slug] || 'assets/images/Group 4.png',
 				description: boosterDescriptions[slug] || '',
 			};
 			console.log(`📦 Formateando: "${boosterName}" -> quantity: ${formattedItem.quantity}, slug: ${slug}, booster_id: ${formattedItem.booster_id}`);

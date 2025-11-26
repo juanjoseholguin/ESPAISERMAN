@@ -2,7 +2,7 @@ import { navigateTo } from "../app.js";
 
 export const renderProfileEdit = () => {
   const currentUser = window.memoryState.currentUser || localStorage.getItem('currentUser') || 'Usuario';
-  const userAvatar = window.memoryState.currentUserAvatar || localStorage.getItem('currentUserAvatar') || '/assets/images/Group 4.png';
+  const userAvatar = window.memoryState.currentUserAvatar || localStorage.getItem('currentUserAvatar') || 'assets/images/Group 4.png';
   const userBgColor = window.memoryState.currentUserBgColor || localStorage.getItem('currentUserBgColor') || '#F9D648';
 
   const app = document.getElementById('app');
@@ -63,11 +63,11 @@ window.openAvatarPicker = () => {
     <div style="background:#fff; width:90%; max-width:360px; border-radius:16px; padding:16px;">
       <h3 style="margin:0 0 8px 0; text-align:center;">Elige tu avatar</h3>
       <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
-        <button class="preset-avatar" data-src="/assets/images/Group 4.png" style="border:none; background:#F3F4F6; border-radius:12px; padding:8px;">
-          <img src="/assets/images/Group 4.png" style="width:100%; height:80px; object-fit:contain;">
+        <button class="preset-avatar" data-src="assets/images/Group 4.png" style="border:none; background:#F3F4F6; border-radius:12px; padding:8px;">
+          <img src="assets/images/Group 4.png" style="width:100%; height:80px; object-fit:contain;">
         </button>
-        <button class="preset-avatar" data-src="/assets/images/spiderman america.png" style="border:none; background:#F3F4F6; border-radius:12px; padding:8px;">
-          <img src="/assets/images/spiderman america.png" style="width:100%; height:80px; object-fit:contain;">
+        <button class="preset-avatar" data-src="assets/images/spiderman america.png" style="border:none; background:#F3F4F6; border-radius:12px; padding:8px;">
+          <img src="assets/images/spiderman america.png" style="width:100%; height:80px; object-fit:contain;">
         </button>
       </div>
       <div style="display:flex; justify-content:center; gap:12px; margin-top:12px;">

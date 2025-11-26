@@ -7,7 +7,7 @@ export default function renderJoinRoom() {
       <button class="back-button" id="back-join"><div class="back-arrow"></div></button>
       <div class="main-content" style="gap:16px;">
         <div class="group4-container" style="margin-top:12px; text-align:center;">
-          <img src="/assets/images/Group 4.png" alt="Espaiserman" class="group4-image" style="max-width:240px;">
+          <img src="assets/images/Group 4.png" alt="Espaiserman" class="group4-image" style="max-width:240px;">
         </div>
         <h1 class="form-title">Unirme a una sala</h1>
         <div class="form-container">

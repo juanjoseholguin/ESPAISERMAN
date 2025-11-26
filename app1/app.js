@@ -50,7 +50,7 @@ if (savedUser && savedUserId) {
   memoryState.currentUser = savedUser;
   memoryState.currentUserId = parseInt(savedUserId, 10);
   if (savedCoins) memoryState.currentUserCoins = parseInt(savedCoins, 10);
-  memoryState.currentUserAvatar = savedAvatar || '/assets/images/Group 4.png';
+  memoryState.currentUserAvatar = savedAvatar || 'assets/images/Group 4.png';
   memoryState.currentUserBgColor = savedBgColor || '#F9D648';
   route = { path: "/main", data: {} };
 } else {

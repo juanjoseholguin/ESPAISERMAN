@@ -32,7 +32,7 @@ export default async function renderActiveGame({ roomCode } = {}) {
 				.map(
 					(powerup) => `
         <div style="background:rgba(255,226,138,0.95); padding:6px 10px; border-radius:10px; display:flex; align-items:center; gap:6px; min-width:fit-content; border:2px solid #1e3a8a;">
-          <img src="/assets/images/${powerup}.png" alt="${powerup}" style="width:28px; height:28px; object-fit:contain;">
+          <img src="assets/images/${powerup}.png" alt="${powerup}" style="width:28px; height:28px; object-fit:contain;">
           <span style="font-size:13px; font-weight:bold; color:#1e3a8a;">${powerupNames[powerup] || powerup}</span>
         </div>
       `
@@ -59,7 +59,7 @@ export default async function renderActiveGame({ roomCode } = {}) {
       <button class="back-button" id="back-active"><div class="back-arrow"></div></button>
       <div class="main-content" style="gap:16px;">
         <div class="group4-container" style="margin-top:12px; text-align:center;">
-          <img src="/assets/images/Group 4.png" alt="Espaiserman" class="group4-image" style="max-width:220px;">
+          <img src="assets/images/Group 4.png" alt="Espaiserman" class="group4-image" style="max-width:220px;">
         </div>
 
         ${powerupsBanner}

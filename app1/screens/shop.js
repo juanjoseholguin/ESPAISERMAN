@@ -85,14 +85,14 @@ function setupInventoryRealtime(userId) {
 }
 
 const boosterIcons = {
-  "Empanadirri": "/assets/images/empanada.png",
-  "Empanadirri legal": "/assets/images/empanada.png",
-  "Media": "/assets/images/guaro.png",
-  "Media de güaro temporal": "/assets/images/guaro.png",
-  "Chichaghrrrom": "/assets/images/chicharron.png",
-  "Chichaghrrom": "/assets/images/chicharron.png",
-  "Café": "/assets/images/cafe.png",
-  "Café cargado": "/assets/images/cafe.png",
+  "Empanadirri": "assets/images/empanada.png",
+  "Empanadirri legal": "assets/images/empanada.png",
+  "Media": "assets/images/guaro.png",
+  "Media de güaro temporal": "assets/images/guaro.png",
+  "Chichaghrrrom": "assets/images/chicharron.png",
+  "Chichaghrrom": "assets/images/chicharron.png",
+  "Café": "assets/images/cafe.png",
+  "Café cargado": "assets/images/cafe.png",
 };
 
 // Potenciadores por defecto (fallback si no hay en BD)
@@ -189,12 +189,12 @@ export default async function renderShop() {
       <button class="back-button" id="back-shop"><div class="back-arrow"></div></button>
       <div class="main-content" style="gap:16px;">
         <div class="group4-container" style="margin-top:12px; text-align:center;">
-          <img src="/assets/images/Group 4.png" alt="Espaiserman" class="group4-image" style="max-width:220px;">
+          <img src="assets/images/Group 4.png" alt="Espaiserman" class="group4-image" style="max-width:220px;">
         </div>
         <h1 class="form-title">Tienda</h1>
         <p style="text-align:center; opacity:.8; margin-top:-8px;">Con estos potenciadores vas a llegar más alto que Jaime</p>
         <div style="display:flex; justify-content:center; align-items:center; gap:8px; background:#FFE28A; padding:8px 16px; border-radius:16px; margin:0 auto 16px;">
-          <img src="/assets/images/Group 19453.png" alt="coin" style="width:24px; height:24px;">
+          <img src="assets/images/Group 19453.png" alt="coin" style="width:24px; height:24px;">
           <span id="coins-label" style="font-weight:800; color:#1e3a8a;">${coins}</span>
         </div>
         <div id="shop-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;"></div>
@@ -217,7 +217,7 @@ export default async function renderShop() {
       <div id="m-desc" style="opacity:.9; margin-bottom:16px;">Descripción</div>
       <div style="display:flex; gap:12px; justify-content:center;">
         <button id="m-back" class="btn-primary" style="max-width:140px; background:#1E3A8A; border-color:#0E1A34;">←</button>
-        <button id="m-buy" class="btn-primary" style="max-width:180px; background:#11A36B; border-color:#0C6E4A;">Comprar <img src="/assets/images/Group 19453.png" style="width:16px; height:16px; vertical-align:middle;"><span id="m-price">0</span></button>
+        <button id="m-buy" class="btn-primary" style="max-width:180px; background:#11A36B; border-color:#0C6E4A;">Comprar <img src="assets/images/Group 19453.png" style="width:16px; height:16px; vertical-align:middle;"><span id="m-price">0</span></button>
       </div>
     </div>`;
   document.body.appendChild(modal);
@@ -274,7 +274,7 @@ export default async function renderShop() {
         return `
         <button class="shop-card" data-id="${booster.id}" style="position:relative; background:rgba(255,255,255,0.9); border-radius:20px; padding:12px; text-align:center; border:none; cursor:pointer;">
           <span style="position:absolute; top:10px; right:12px; background:#1e3a8a; color:white; padding:2px 8px; border-radius:999px; font-size:12px;">x${qty}</span>
-          <img src="${boosterIcons[booster.booster_name] || "/assets/images/Group 4.png"}" alt="${booster.booster_name}" style="width:100%; max-width:96px; margin:0 auto; display:block;">
+          <img src="${boosterIcons[booster.booster_name] || "assets/images/Group 4.png"}" alt="${booster.booster_name}" style="width:100%; max-width:96px; margin:0 auto; display:block;">
           <div style="font-weight:800; margin-top:8px; color:#1e3a8a;">${booster.booster_name}</div>
           <div style="font-size:14px; color:#666; margin-top:4px;">${booster.booster_price || 200} monedas</div>
         </button>`;
@@ -291,7 +291,7 @@ export default async function renderShop() {
     modal.dataset.boosterId = booster.id;
     modal.querySelector('#m-title').textContent = booster.booster_name;
     modal.querySelector('#m-sub').textContent = booster.booster_hability || "Potenciador especial";
-    modal.querySelector('#m-img').src = boosterIcons[booster.booster_name] || "/assets/images/Group 4.png";
+    modal.querySelector('#m-img').src = boosterIcons[booster.booster_name] || "assets/images/Group 4.png";
     modal.querySelector('#m-phrase').textContent = booster.booster_description || "¡Dale con toda!";
     modal.querySelector('#m-desc').textContent = `Precio: ${booster.booster_price} monedas`;
     modal.querySelector('#m-price').textContent = booster.booster_price;

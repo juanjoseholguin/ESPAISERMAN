@@ -7,7 +7,7 @@ export default async function renderGameResults({ roomCode } = {}) {
     <div class="screen active">
       <div class="main-content" style="gap:16px; justify-content:center;">
         <div class="group4-container" style="text-align:center;">
-          <img src="/assets/images/Group 4.png" alt="Espaiserman" class="group4-image" style="max-width:200px;">
+          <img src="assets/images/Group 4.png" alt="Espaiserman" class="group4-image" style="max-width:200px;">
         </div>
         <h1 style="color:#1e3a8a; text-align:center; font-size:32px; margin-bottom:8px;">¡Se acabó esta vuelta!</h1>
         <p style="text-align:center; font-size:18px; margin-top:-16px; margin-bottom:8px; color:#1e3a8a; font-weight:bold;">"¡Rosca! ¡Rosca!"<br/>El ganador es...</p>
