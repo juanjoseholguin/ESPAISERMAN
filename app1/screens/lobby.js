@@ -37,9 +37,11 @@ export default async function renderLobby({ code } = {}) {
 			return;
 		}
 
-		const uniquePlayers = [...new Map(state.players.map((p) => [p.id || p.user_id || p.name, p])).values()];
+		// Filtrar moderadores y obtener jugadores únicos (incluir false y null, excluir solo true)
+		const playersOnly = state.players.filter(p => p.is_moderator !== true);
+		const uniquePlayers = [...new Map(playersOnly.map((p) => [p.id || p.user_id || p.name, p])).values()];
 
-		console.log(`👥 Rendering ${uniquePlayers.length} unique players:`, uniquePlayers);
+		console.log(`👥 Rendering ${uniquePlayers.length} unique players - Moderadores excluidos:`, uniquePlayers);
 
 		list.innerHTML = '';
 		uniquePlayers.forEach((p, idx) => {

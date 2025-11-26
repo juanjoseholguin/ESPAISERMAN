@@ -81,17 +81,20 @@ export async function loadRoomState(roomPin) {
     console.log('✅ Room state loaded:', roomData);
 
     // Transformar el formato para compatibilidad con el código existente
+    // Filtrar moderadores para que no aparezcan en la lista de jugadores
     const transformedState = {
       code: roomData.room_pin || roomPin,
-      players: (roomData.players || []).map(p => ({
-        id: p.user_id,
-        user_id: p.user_id,
-        name: p.player_name || p.name || 'Jugador',
-        player_name: p.player_name || p.name || 'Jugador',
-        avatar_url: p.avatar_url,
-        avatar_bg: p.avatar_bg,
-        score: p.score || 0
-      })),
+      players: (roomData.players || [])
+        .filter(p => p.is_moderator !== true) // Excluir solo moderadores (incluir false y null)
+        .map(p => ({
+          id: p.user_id,
+          user_id: p.user_id,
+          name: p.player_name || p.name || 'Jugador',
+          player_name: p.player_name || p.name || 'Jugador',
+          avatar_url: p.avatar_url,
+          avatar_bg: p.avatar_bg,
+          score: p.score || 0
+        })),
       host: roomData.admin_user_id,
       category: roomData.room_category_id,
       maxParticipants: roomData.room_size,

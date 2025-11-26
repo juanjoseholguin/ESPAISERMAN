@@ -191,11 +191,14 @@ async function updateLocationInSupabase(location) {
 			return;
 		}
 
+		// Asegurar que roomCode esté en mayúsculas y sea string (como se guarda en la BD)
+		const cleanRoomCode = String(roomCode).trim().toUpperCase();
+		
 		const { data, error } = await supabaseClient
 			.from('player_locations')
 			.upsert(
 				{
-					room_code: roomCode,
+					room_code: cleanRoomCode,
 					player_name: playerName,
 					latitude: location.latitude,
 					longitude: location.longitude,

@@ -30,17 +30,20 @@ export function subscribeToPlayerLocations(roomCode, onLocationUpdate) {
 		locationChannel = null;
 	}
 
-	console.log(`📍 Suscribiéndose a ubicaciones de jugadores en sala: ${roomCode}`);
+	// Asegurar que roomCode esté en mayúsculas y sea string (como se guarda en la BD)
+	const cleanRoomCode = String(roomCode).trim().toUpperCase();
+	
+	console.log(`📍 Suscribiéndose a ubicaciones de jugadores en sala: ${cleanRoomCode}`);
 
 	locationChannel = supabase
-		.channel(`player-locations-${roomCode}`)
+		.channel(`player-locations-${cleanRoomCode}`)
 		.on(
 			'postgres_changes',
 			{
 				event: '*',
 				schema: 'public',
 				table: 'player_locations',
-				filter: `room_code=eq.${roomCode}`
+				filter: `room_code=eq.${cleanRoomCode}`
 			},
 			async (payload) => {
 				console.log('📍 Cambio en ubicaciones de jugadores:', payload);
@@ -48,7 +51,7 @@ export function subscribeToPlayerLocations(roomCode, onLocationUpdate) {
 				const { data: locations, error } = await supabase
 					.from('player_locations')
 					.select('*')
-					.eq('room_code', roomCode);
+					.eq('room_code', cleanRoomCode);
 
 				if (error) {
 					console.error('Error cargando ubicaciones:', error);
@@ -62,7 +65,7 @@ export function subscribeToPlayerLocations(roomCode, onLocationUpdate) {
 		)
 		.subscribe();
 
-	loadPlayerLocations(roomCode).then(locations => {
+	loadPlayerLocations(cleanRoomCode).then(locations => {
 		if (onLocationUpdate) {
 			onLocationUpdate(locations || []);
 		}
@@ -87,14 +90,24 @@ export async function loadPlayerLocations(roomCode) {
 	}
 
 	try {
+		// Asegurar que roomCode esté en mayúsculas y sea string (como se guarda en la BD)
+		const cleanRoomCode = String(roomCode).trim().toUpperCase();
+		
+		console.log(`📍 Cargando ubicaciones para sala: ${cleanRoomCode}`);
+		
 		const { data, error } = await supabase
 			.from('player_locations')
 			.select('*')
-			.eq('room_code', roomCode);
+			.eq('room_code', cleanRoomCode);
 
 		if (error) {
-			console.error('Error cargando ubicaciones:', error);
+			console.error('❌ Error cargando ubicaciones:', error);
 			return [];
+		}
+
+		console.log(`✅ Ubicaciones cargadas: ${data?.length || 0} ubicaciones encontradas`);
+		if (data && data.length > 0) {
+			console.log('📍 Ubicaciones:', data.map(l => ({ player: l.player_name, lat: l.latitude, lon: l.longitude })));
 		}
 
 		return data || [];

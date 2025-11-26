@@ -128,11 +128,16 @@ async function getRoomWithPlayers(roomPin) {
 
     console.log(`✅ Room found:`, room);
 
-    const { data: players, error: playersError } = await supabase
+    // Obtener solo jugadores (excluir moderadores)
+    // Obtener todos los jugadores y filtrar moderadores después para manejar null correctamente
+    const { data: allPlayers, error: playersError } = await supabase
       .from('players_room')
       .select('*')
       .eq('room_pin', cleanRoomPin)
       .order('id', { ascending: true }); // Ordenar por id si created_at no existe
+    
+    // Filtrar moderadores en JavaScript (más confiable que el filtro de Supabase con null)
+    const players = (allPlayers || []).filter(p => p.is_moderator !== true);
 
     if (playersError) {
       console.error(`❌ Error getting players for room ${cleanRoomPin}:`, playersError);
@@ -171,13 +176,16 @@ async function joinRoom(roomPin, userId, playerName, avatarUrl, avatarBg, isMode
     const room = roomResult.data;
     console.log(`✅ Room exists, proceeding to join`);
 
-    // Verificar si la sala está llena
-    const { count } = await supabase
+    // Verificar si la sala está llena (solo contar jugadores, no moderadores)
+    const { data: allPlayersForCount } = await supabase
       .from('players_room')
-      .select('*', { count: 'exact', head: true })
+      .select('*')
       .eq('room_pin', cleanRoomPin);
+    
+    // Filtrar moderadores y contar solo jugadores
+    const playerCount = (allPlayersForCount || []).filter(p => p.is_moderator !== true).length;
 
-    if (count >= room.room_size) {
+    if (playerCount >= room.room_size) {
       return { success: false, error: `Sala llena (${room.room_size} jugadores máximo)` };
     }
 
@@ -195,7 +203,7 @@ async function joinRoom(roomPin, userId, playerName, avatarUrl, avatarBg, isMode
     }
 
     // Insertar jugador
-    console.log(`➕ Inserting player into room ${cleanRoomPin}...`);
+    console.log(`➕ Inserting player into room ${cleanRoomPin}...`, { isModerator, userId, playerName });
     const { data, error } = await supabase
       .from('players_room')
       .insert({
@@ -205,7 +213,7 @@ async function joinRoom(roomPin, userId, playerName, avatarUrl, avatarBg, isMode
         player_name: playerName,
         avatar_url: avatarUrl,
         avatar_bg: avatarBg,
-        is_moderator: isModerator,
+        is_moderator: isModerator === true ? true : false, // Asegurar que sea explícitamente true o false
         score: 0
       })
       .select()

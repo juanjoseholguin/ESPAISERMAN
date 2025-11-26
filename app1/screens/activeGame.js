@@ -191,12 +191,18 @@ function renderIntermedioWithGeolocation({ app, roomCode, currentQuestion, total
 	}
 
 	const playerNameForGeo = memoryState.currentUser || 'Jugador';
-	console.log('📍 Iniciando geolocalización para:', { roomCode, playerName: playerNameForGeo });
+	// Asegurar que roomCode esté en mayúsculas (como se guarda en la BD)
+	const cleanRoomCode = roomCode ? String(roomCode).trim().toUpperCase() : null;
+	console.log('📍 Iniciando geolocalización para:', { roomCode: cleanRoomCode, playerName: playerNameForGeo });
 
 	setTimeout(() => {
-		initGeolocation(roomCode, playerNameForGeo);
-		window.geolocationActive = true;
-		console.log('✅ Geolocalización iniciada');
+		if (cleanRoomCode) {
+			initGeolocation(cleanRoomCode, playerNameForGeo);
+			window.geolocationActive = true;
+			console.log('✅ Geolocalización iniciada');
+		} else {
+			console.warn('⚠️ No se puede iniciar geolocalización: roomCode no disponible');
+		}
 	}, 500);
 
 	let playerMap = null;
@@ -387,10 +393,15 @@ function renderIntermedioWithGeolocation({ app, roomCode, currentQuestion, total
 			locationBtn.addEventListener('click', () => {
 				console.log('📍 Botón de ubicación presionado manualmente');
 				const playerNameForGeo = memoryState.currentUser || 'Jugador';
-				initGeolocation(roomCode, playerNameForGeo);
-				window.geolocationActive = true;
-				locationBtn.textContent = '📍 Ubicación activada';
-				locationBtn.style.background = '#11A36B';
+				const cleanRoomCode = roomCode ? String(roomCode).trim().toUpperCase() : null;
+				if (cleanRoomCode) {
+					initGeolocation(cleanRoomCode, playerNameForGeo);
+					window.geolocationActive = true;
+					locationBtn.textContent = '📍 Ubicación activada';
+					locationBtn.style.background = '#11A36B';
+				} else {
+					console.warn('⚠️ No se puede iniciar geolocalización: roomCode no disponible');
+				}
 				setTimeout(() => {
 					locationBtn.style.display = 'none';
 				}, 2000);

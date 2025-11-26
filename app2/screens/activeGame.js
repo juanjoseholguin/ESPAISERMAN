@@ -228,7 +228,9 @@ export default async function renderActiveGame({ roomCode } = {}) {
 		}
 
 		const { subscribeToPlayerLocations } = await import('../services/playerLocationsRealtime.js');
-		locationSubscription = subscribeToPlayerLocations(roomCode, (locations) => {
+		// Asegurar que roomCode esté en mayúsculas
+		const cleanRoomCode = String(roomCode).trim().toUpperCase();
+		locationSubscription = subscribeToPlayerLocations(cleanRoomCode, (locations) => {
 			let mapPoints = window.roomMapPoints;
 			if (!mapPoints) {
 				mapPoints = [
